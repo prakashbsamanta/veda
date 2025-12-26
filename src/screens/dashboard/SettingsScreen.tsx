@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Lin
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { authService } from '../../services/auth/AuthService';
-import { LogOut, ChevronRight, Brain, Zap, User as UserIcon, Info, Cloud, Check } from 'lucide-react-native';
+import { LogOut, ChevronRight, Brain, Zap, User as UserIcon, Info, Cloud, Check, Loader as Loader2, AlertTriangle, Save } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
@@ -11,16 +11,16 @@ export default function SettingsScreen() {
     const { user } = useAuthStore();
     const { provider, setProvider, openRouterKey, setOpenRouterKey, selectedModel } = useSettingsStore();
 
-    const [keyInput, setKeyInput] = React.useState(openRouterKey);
+    // const [keyInput, setKeyInput] = React.useState(openRouterKey); // Moved to ProviderCard
 
-    React.useEffect(() => {
-        setKeyInput(openRouterKey);
-    }, [openRouterKey]);
+    // React.useEffect(() => {
+    //     setKeyInput(openRouterKey);
+    // }, [openRouterKey]);
 
-    const handleKeySave = () => {
-        setOpenRouterKey(keyInput);
-        Alert.alert("Success", "OpenRouter Key Saved");
-    };
+    // const handleKeySave = () => {
+    //     setOpenRouterKey(keyInput);
+    //     Alert.alert("Success", "OpenRouter Key Saved");
+    // };
 
     const handleLogout = async () => {
         Alert.alert(
@@ -43,64 +43,153 @@ export default function SettingsScreen() {
         );
     };
 
-    const ProviderCard = ({ id, name, icon, description }: { id: 'gemini' | 'perplexity' | 'openrouter', name: string, icon: React.ReactNode, description: string }) => (
-        <TouchableOpacity
-            style={[styles.providerCard, provider === id && styles.providerCardActive]}
-            onPress={() => setProvider(id)}
-        >
-            <View style={styles.providerHeader}>
-                <View style={styles.providerIconContainer}>
-                    {icon}
+    const ProviderCard = ({ id, name, icon, description }: { id: 'gemini' | 'perplexity' | 'openrouter', name: string, icon: React.ReactNode, description: string }) => {
+        const isActive = provider === id;
+
+        const getKeyValue = () => {
+            if (id === 'openrouter') return openRouterKey;
+            if (id === 'gemini') return useSettingsStore.getState().geminiKey;
+            if (id === 'perplexity') return useSettingsStore.getState().perplexityKey;
+            return '';
+        };
+
+        const setKeyValue = (text: string) => {
+            if (id === 'openrouter') setOpenRouterKey(text);
+            if (id === 'gemini') useSettingsStore.getState().setGeminiKey(text);
+            if (id === 'perplexity') useSettingsStore.getState().setPerplexityKey(text);
+        };
+
+        const [localKey, setLocalKey] = React.useState(getKeyValue());
+        const [isTesting, setIsTesting] = React.useState(false);
+        const [isValidating, setIsValidating] = React.useState(false);
+
+        React.useEffect(() => {
+            setLocalKey(getKeyValue());
+        }, [provider]);
+
+        const validateFormat = (text: string) => {
+            if (!text) return true;
+            if (id === 'openrouter' && !text.startsWith('sk-or-')) return false;
+            if (id === 'gemini' && !text.startsWith('AIza')) return false;
+            if (id === 'perplexity' && !text.startsWith('pplx-')) return false;
+            return true;
+        };
+
+        const isFormatValid = validateFormat(localKey);
+
+        const handleSave = () => {
+            if (!localKey.trim()) {
+                Alert.alert("Invalid Key", "Please enter an API Key.");
+                return;
+            }
+            setKeyValue(localKey);
+            Alert.alert("Saved", `${name} Key Saved Successfully.`);
+        };
+
+        const handleTestConnection = async () => {
+            if (!localKey.trim()) {
+                Alert.alert("Missing Key", "Please save a key first.");
+                return;
+            }
+
+            setIsTesting(true);
+            const { cloudAIService } = require('../../services/ai/CloudAIService');
+            const success = await cloudAIService.testConnection(id, localKey);
+            setIsTesting(false);
+
+            if (success) {
+                Alert.alert("Connection Successful", `Successfully connected to ${name}!`);
+            } else {
+                Alert.alert("Connection Failed", `Could not verify key with ${name}. Please check the key and your internet connection.`);
+            }
+        };
+
+        return (
+            <TouchableOpacity
+                style={[styles.providerCard, isActive && styles.providerCardActive]}
+                onPress={() => setProvider(id)}
+                activeOpacity={0.9}
+            >
+                <View style={styles.providerHeader}>
+                    <View style={styles.providerIconContainer}>
+                        {icon}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.providerName, isActive && styles.textActive]}>{name}</Text>
+                        <Text style={[styles.providerDesc, isActive && styles.textActiveDesc]}>{description}</Text>
+                    </View>
+                    {isActive && (
+                        <View style={styles.activeBadge}>
+                            <View style={styles.activeDot} />
+                        </View>
+                    )}
                 </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={[styles.providerName, provider === id && styles.textActive]}>{name}</Text>
-                    <Text style={[styles.providerDesc, provider === id && styles.textActiveDesc]}>{description}</Text>
-                </View>
-                {provider === id && (
-                    <View style={styles.activeBadge}>
-                        <View style={styles.activeDot} />
+
+                {isActive && (
+                    <View style={styles.configContainer}>
+                        <View style={styles.divider} />
+
+                        <Text style={styles.configLabel}>API Key (Required)</Text>
+
+                        <View style={[styles.inputRow, !isFormatValid && { borderColor: '#FF453A', borderWidth: 1 }]}>
+                            <TextInput
+                                style={styles.keyInput}
+                                placeholder={id === 'openrouter' ? "sk-or-..." : "Paste your API Key..."}
+                                placeholderTextColor="#666"
+                                secureTextEntry
+                                value={localKey}
+                                onChangeText={setLocalKey}
+                                autoCapitalize="none"
+                            />
+                        </View>
+
+                        {!isFormatValid && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 6 }}>
+                                <AlertTriangle size={14} color="#FF453A" />
+                                <Text style={{ color: '#FF453A', fontSize: 12 }}>Invalid key format</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.actionButtons}>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                                <Save size={16} color="#1C1C1E" />
+                                <Text style={styles.saveButtonText}>Save Key</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.testButton, isTesting && { opacity: 0.7 }]}
+                                onPress={handleTestConnection}
+                                disabled={isTesting}
+                            >
+                                {isTesting ? <Loader2 size={16} color="#FFFFFF" /> : <Zap size={16} color="#FFFFFF" />}
+                                <Text style={styles.testButtonText}>{isTesting ? "Testing..." : "Test Connection"}</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {id === 'openrouter' && (
+                            <>
+                                <Text style={[styles.configLabel, { marginTop: 12 }]}>Active Model</Text>
+                                <TouchableOpacity
+                                    style={styles.modelSelector}
+                                    onPress={() => navigation.navigate('ModelBrowser')}
+                                >
+                                    <View>
+                                        <Text style={styles.selectedModelName}>
+                                            {selectedModel ? selectedModel.name : "Select a Model"}
+                                        </Text>
+                                        <Text style={styles.selectedModelId}>
+                                            {selectedModel ? selectedModel.id : "Tap to browse..."}
+                                        </Text>
+                                    </View>
+                                    <ChevronRight color="#666" size={20} />
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 )}
-            </View>
-
-            {/* Expanded Config for OpenRouter when Active */}
-            {id === 'openrouter' && provider === 'openrouter' && (
-                <View style={styles.configContainer}>
-                    <View style={styles.divider} />
-
-                    <Text style={styles.configLabel}>API Key</Text>
-                    <View style={styles.inputRow}>
-                        <TextInput
-                            style={styles.keyInput}
-                            placeholder="sk-or-..."
-                            placeholderTextColor="#666"
-                            secureTextEntry
-                            value={keyInput}
-                            onChangeText={setKeyInput}
-                            onEndEditing={handleKeySave}
-                        />
-                        {openRouterKey ? <Check color="#34D399" size={20} /> : null}
-                    </View>
-
-                    <Text style={styles.configLabel}>Active Model</Text>
-                    <TouchableOpacity
-                        style={styles.modelSelector}
-                        onPress={() => navigation.navigate('ModelBrowser')}
-                    >
-                        <View>
-                            <Text style={styles.selectedModelName}>
-                                {selectedModel ? selectedModel.name : "Select a Model"}
-                            </Text>
-                            <Text style={styles.selectedModelId}>
-                                {selectedModel ? selectedModel.id : "Tap to browse..."}
-                            </Text>
-                        </View>
-                        <ChevronRight color="#666" size={20} />
-                    </TouchableOpacity>
-                </View>
-            )}
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -381,5 +470,42 @@ const styles = StyleSheet.create({
         marginTop: 32,
         fontSize: 12,
         fontStyle: 'italic',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 16,
+    },
+    saveButton: {
+        flex: 1,
+        backgroundColor: '#E5D0AC',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+    },
+    saveButtonText: {
+        color: '#1C1C1E',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    testButton: {
+        flex: 1,
+        backgroundColor: '#2C2C2E',
+        borderWidth: 1,
+        borderColor: '#4A4A4C',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+    },
+    testButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 14,
     }
 });

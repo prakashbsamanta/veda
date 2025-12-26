@@ -26,6 +26,30 @@ export class CloudAIService {
         this.genAI = null; // Reset SDK instance if config changes
     }
 
+    public async testConnection(provider: 'gemini' | 'perplexity' | 'openrouter', apiKey?: string): Promise<boolean> {
+        try {
+            logger.info(`Testing connection for ${provider}...`);
+            const testPrompt = "Hi"; // Minimal token usage
+
+            // Use provided key or fallback to config
+            const keyToTest = apiKey || this.config.primary.apiKey;
+            if (!keyToTest) return false;
+
+            if (provider === 'gemini') {
+                await this.callGeminiSDK(testPrompt, keyToTest, "gemini-pro");
+            } else if (provider === 'perplexity') {
+                await this.callPerplexity(testPrompt, keyToTest, "sonar-small-online");
+            } else if (provider === 'openrouter') {
+                await this.callOpenRouter(testPrompt, keyToTest, "mistralai/mistral-7b-instruct:free");
+            }
+
+            return true;
+        } catch (error) {
+            logger.error(`Connection test failed for ${provider}:`, error);
+            return false;
+        }
+    }
+
     private getClient(apiKey: string): GoogleGenerativeAI {
         if (!this.genAI) {
             this.genAI = new GoogleGenerativeAI(apiKey);
