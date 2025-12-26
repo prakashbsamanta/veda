@@ -2,7 +2,7 @@ import { GEMINI_API_KEY, PERPLEXITY_API_KEY } from '@env';
 
 // ... (interfaces remain same)
 export interface LLMProvider {
-    name: "gemini" | "perplexity" | "claude" | "custom" | "local";
+    name: "gemini" | "perplexity" | "claude" | "custom" | "local" | "openrouter";
     apiKey?: string;
     baseUrl?: string;
     model: string;

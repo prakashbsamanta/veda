@@ -2,6 +2,7 @@ export type RootStackParamList = {
     Auth: undefined;
     Main: undefined;
     Debug: undefined;
+    ModelBrowser: undefined;
 };
 
 export type AuthStackParamList = {

@@ -22,6 +22,8 @@ export class NotificationService {
                 shouldShowAlert: true,
                 shouldPlaySound: true,
                 shouldSetBadge: false,
+                shouldShowBanner: true,
+                shouldShowList: true
             }),
         });
     }
@@ -64,33 +66,46 @@ export class NotificationService {
     }
 
     public async scheduleNotification(title: string, body: string, seconds: number) {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title,
-                body,
-                sound: true,
-                color: '#E5D0AC',
-            },
-            trigger: {
-                seconds: seconds,
-            },
-        });
+        try {
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title,
+                    body,
+                    data: { data: 'goes here' },
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                    seconds: 2
+                },
+            });
+            return true;
+        } catch (error) {
+            console.log('Error scheduling notification:', error);
+            return false;
+        }
     }
 
     public async scheduleNotificationAtDate(title: string, body: string, date: Date) {
-        const trigger = date.getTime(); // Timestamp
-        // For Expo Notifications, simple Date works too in newer versions, or { date: date }
-
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title,
-                body,
-                sound: true,
-            },
-            trigger: {
-                date: date
-            },
-        });
+        try {
+            // Assuming 'logger' is defined elsewhere or will be added. Using console.log for now.
+            console.log(`Scheduling notification for ${date.toISOString()}`);
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title,
+                    body,
+                    sound: true,
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.DATE,
+                    date: date
+                },
+            });
+            return true;
+        } catch (error) {
+            // Assuming 'logger' is defined elsewhere or will be added. Using console.error for now.
+            console.error('Error scheduling scheduled notification:', error);
+            return false;
+        }
     }
 
     public async cancelAllNotifications() {

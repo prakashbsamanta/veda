@@ -1,13 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Linking, TextInput } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { authService } from '../../services/auth/AuthService';
-import { LogOut, ChevronRight, Brain, Zap, User as UserIcon, Info } from 'lucide-react-native';
+import { LogOut, ChevronRight, Brain, Zap, User as UserIcon, Info, Cloud, Check } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
+    const navigation = useNavigation<any>();
     const { user } = useAuthStore();
-    const { provider, setProvider } = useSettingsStore();
+    const { provider, setProvider, openRouterKey, setOpenRouterKey, selectedModel } = useSettingsStore();
+
+    const [keyInput, setKeyInput] = React.useState(openRouterKey);
+
+    React.useEffect(() => {
+        setKeyInput(openRouterKey);
+    }, [openRouterKey]);
+
+    const handleKeySave = () => {
+        setOpenRouterKey(keyInput);
+        Alert.alert("Success", "OpenRouter Key Saved");
+    };
 
     const handleLogout = async () => {
         Alert.alert(
@@ -30,7 +43,7 @@ export default function SettingsScreen() {
         );
     };
 
-    const ProviderCard = ({ id, name, icon, description }: { id: 'gemini' | 'perplexity', name: string, icon: React.ReactNode, description: string }) => (
+    const ProviderCard = ({ id, name, icon, description }: { id: 'gemini' | 'perplexity' | 'openrouter', name: string, icon: React.ReactNode, description: string }) => (
         <TouchableOpacity
             style={[styles.providerCard, provider === id && styles.providerCardActive]}
             onPress={() => setProvider(id)}
@@ -41,7 +54,7 @@ export default function SettingsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={[styles.providerName, provider === id && styles.textActive]}>{name}</Text>
-                    <Text style={styles.providerDesc}>{description}</Text>
+                    <Text style={[styles.providerDesc, provider === id && styles.textActiveDesc]}>{description}</Text>
                 </View>
                 {provider === id && (
                     <View style={styles.activeBadge}>
@@ -49,6 +62,43 @@ export default function SettingsScreen() {
                     </View>
                 )}
             </View>
+
+            {/* Expanded Config for OpenRouter when Active */}
+            {id === 'openrouter' && provider === 'openrouter' && (
+                <View style={styles.configContainer}>
+                    <View style={styles.divider} />
+
+                    <Text style={styles.configLabel}>API Key</Text>
+                    <View style={styles.inputRow}>
+                        <TextInput
+                            style={styles.keyInput}
+                            placeholder="sk-or-..."
+                            placeholderTextColor="#666"
+                            secureTextEntry
+                            value={keyInput}
+                            onChangeText={setKeyInput}
+                            onEndEditing={handleKeySave}
+                        />
+                        {openRouterKey ? <Check color="#34D399" size={20} /> : null}
+                    </View>
+
+                    <Text style={styles.configLabel}>Active Model</Text>
+                    <TouchableOpacity
+                        style={styles.modelSelector}
+                        onPress={() => navigation.navigate('ModelBrowser')}
+                    >
+                        <View>
+                            <Text style={styles.selectedModelName}>
+                                {selectedModel ? selectedModel.name : "Select a Model"}
+                            </Text>
+                            <Text style={styles.selectedModelId}>
+                                {selectedModel ? selectedModel.id : "Tap to browse..."}
+                            </Text>
+                        </View>
+                        <ChevronRight color="#666" size={20} />
+                    </TouchableOpacity>
+                </View>
+            )}
         </TouchableOpacity>
     );
 
@@ -91,7 +141,14 @@ export default function SettingsScreen() {
                         id="gemini"
                         name="Google Gemini"
                         icon={<Brain color={provider === 'gemini' ? '#1C1C1E' : '#4A90E2'} size={24} />}
-                        description="Great for creative writing and general reasoning."
+                        description="Great for creative writing."
+                    />
+
+                    <ProviderCard
+                        id="openrouter"
+                        name="OpenRouter (BYOK)"
+                        icon={<Cloud color={provider === 'openrouter' ? '#1C1C1E' : '#A855F7'} size={24} />}
+                        description="Access any model via your own key."
                     />
                 </View>
             </View>
@@ -215,6 +272,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#888', // Make sure this is readable on both backgrounds, or condition it
     },
+    textActiveDesc: {
+        color: '#1C1C1E',
+        opacity: 0.8,
+    },
     activeBadge: {
         width: 12,
         height: 12,
@@ -229,6 +290,53 @@ const styles = StyleSheet.create({
         height: 6,
         borderRadius: 3,
         backgroundColor: '#1C1C1E',
+    },
+    // OpenRouter Config Styles
+    configContainer: {
+        marginTop: 12,
+        paddingTop: 12,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        marginBottom: 12,
+    },
+    configLabel: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#1C1C1E', // Dark because it's inside the active card
+        marginBottom: 4,
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.4)',
+        borderRadius: 8,
+        paddingHorizontal: 8,
+        marginBottom: 12,
+    },
+    keyInput: {
+        flex: 1,
+        paddingVertical: 8,
+        color: '#1C1C1E',
+    },
+    modelSelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(255,255,255,0.4)',
+        padding: 10,
+        borderRadius: 8,
+    },
+    selectedModelName: {
+        fontWeight: 'bold',
+        color: '#1C1C1E',
+        fontSize: 14,
+    },
+    selectedModelId: {
+        fontSize: 10,
+        color: '#1C1C1E',
+        opacity: 0.7,
     },
     menuItem: {
         flexDirection: 'row',

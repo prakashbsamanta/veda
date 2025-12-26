@@ -61,7 +61,65 @@ export class CloudAIService {
             return this.callPerplexity(prompt, apiKey, provider.model);
         }
 
+        if (provider.name === 'openrouter') {
+            const apiKey = provider.apiKey; // Config injection
+            const modelId = provider.model || "mistralai/mistral-7b-instruct:free";
+
+            if (!apiKey) {
+                return {
+                    text: "OpenRouter API Key not set. Please configure it in Settings.",
+                    tokensUsed: 0
+                };
+            }
+
+            return this.callOpenRouter(prompt, apiKey, modelId);
+        }
+
         throw new Error(`Provider ${provider.name} not implemented yet`);
+    }
+
+    private async callOpenRouter(prompt: string, apiKey: string, modelId: string): Promise<AIResponse> {
+        try {
+            logger.info(`Calling OpenRouter with model: ${modelId}`);
+
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "HTTP-Referer": "https://eda-app.com",
+                    "X-Title": "Veda Assistant",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [
+                        { role: "system", content: "You are Veda, an advanced AI assistant." },
+                        { role: "user", content: prompt }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                // Check for credit errors (402 or 403 usually)
+                if (response.status === 402) {
+                    throw new Error("Insufficient credits on OpenRouter. Please check your account balance.");
+                }
+                throw new Error(`OpenRouter Error (${response.status}): ${errText}`);
+            }
+
+            const data = await response.json();
+            const text = data.choices?.[0]?.message?.content || "No response text";
+
+            // OpenRouter usually follows OpenAI format for usage
+            const tokens = data.usage?.total_tokens || 0;
+
+            return { text, tokensUsed: tokens };
+
+        } catch (error) {
+            logger.error("OpenRouter call failed:", error);
+            throw error;
+        }
     }
 
     private async callPerplexity(prompt: string, apiKey: string, modelName: string): Promise<AIResponse> {

@@ -1,0 +1,414 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Modal, ScrollView, Animated } from 'react-native';
+import { useSettingsStore, OpenRouterModel } from '../../store/settingsStore';
+import { openRouterService, OpenRouterModelDTO } from '../../services/ai/OpenRouterService';
+import { Search, Info, X, Check, Cloud } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+
+export default function ModelBrowserScreen() {
+    const navigation = useNavigation();
+    const { selectedModel, setSelectedModel, openRouterKey } = useSettingsStore();
+
+    const [models, setModels] = useState<OpenRouterModelDTO[]>([]);
+    const [filteredModels, setFilteredModels] = useState<OpenRouterModelDTO[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [detailModel, setDetailModel] = useState<OpenRouterModelDTO | null>(null);
+
+    useEffect(() => {
+        loadModels();
+    }, []);
+
+    const loadModels = async () => {
+        setLoading(true);
+        try {
+            const data = await openRouterService.fetchModels();
+            // Sort: Free models first, then by name
+            const sorted = data.sort((a, b) => {
+                const isAFree = isFree(a);
+                const isBFree = isFree(b);
+                if (isAFree && !isBFree) return -1;
+                if (!isAFree && isBFree) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            setModels(sorted);
+            setFilteredModels(sorted);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearch = (text: string) => {
+        setSearchQuery(text);
+        if (!text) {
+            setFilteredModels(models);
+            return;
+        }
+        const lower = text.toLowerCase();
+        const filtered = models.filter(m =>
+            m.name.toLowerCase().includes(lower) ||
+            m.id.toLowerCase().includes(lower) ||
+            (m.description && m.description.toLowerCase().includes(lower))
+        );
+        setFilteredModels(filtered);
+    };
+
+    const isFree = (model: OpenRouterModelDTO) => {
+        const prompt = parseFloat(model.pricing.prompt);
+        const completion = parseFloat(model.pricing.completion);
+        return prompt === 0 && completion === 0;
+    };
+
+    const handleSelect = (model: OpenRouterModelDTO) => {
+        const mappedModel: OpenRouterModel = {
+            id: model.id,
+            name: model.name,
+            description: model.description,
+            context_length: model.context_length,
+            pricing: model.pricing
+        };
+        setSelectedModel(mappedModel);
+        setDetailModel(null);
+        navigation.goBack();
+    };
+
+    const renderItem = ({ item }: { item: OpenRouterModelDTO }) => {
+        const free = isFree(item);
+        const isSelected = selectedModel?.id === item.id;
+
+        return (
+            <TouchableOpacity
+                style={[styles.card, isSelected && styles.selectedCard]}
+                onPress={() => setDetailModel(item)}
+            >
+                <View style={styles.cardHeader}>
+                    <Text style={styles.modelName} numberOfLines={1}>{item.name.replace(':free', '')}</Text>
+                    {free && <View style={styles.freeBadge}><Text style={styles.freeText}>FREE</Text></View>}
+                    {isSelected && <View style={styles.selectedBadge}><Check size={12} color="#000" /></View>}
+                </View>
+
+                <Text style={styles.modelId} numberOfLines={1}>{item.id}</Text>
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoText}>
+                        Ctx: {Math.round(item.context_length / 1024)}k
+                    </Text>
+                    {!free && (
+                        <Text style={styles.priceText}>
+                            ${(parseFloat(item.pricing.prompt) * 1000000).toFixed(2)} / 1M
+                        </Text>
+                    )}
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+                    <X color="#FFF" size={24} />
+                </TouchableOpacity>
+                <Text style={styles.title}>Browse Models</Text>
+                <View style={{ width: 24 }} />
+            </View>
+
+            <View style={styles.searchContainer}>
+                <Search color="#666" size={20} />
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search 'DeepSeek', 'Llama'..."
+                    placeholderTextColor="#666"
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                />
+            </View>
+
+            {loading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#E5D0AC" />
+                    <Text style={styles.loadingText}>Fetching models from OpenRouter...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredModels}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContent}
+                    initialNumToRender={15}
+                />
+            )}
+
+            {/* Detail Modal */}
+            <Modal
+                visible={!!detailModel}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setDetailModel(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{detailModel?.name}</Text>
+                            <TouchableOpacity onPress={() => setDetailModel(null)}>
+                                <X color="#A1A1AA" size={24} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.modalBody}>
+                            <View style={styles.tagRow}>
+                                {detailModel && isFree(detailModel) && (
+                                    <View style={styles.freeBadgeLarge}>
+                                        <Text style={styles.freeTextLarge}>Free</Text>
+                                    </View>
+                                )}
+                                <View style={styles.ctxBadge}>
+                                    <Text style={styles.ctxText}>{Math.round((detailModel?.context_length || 0) / 1000)}k Context</Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.sectionTitle}>Description</Text>
+                            <Text style={styles.description}>
+                                {detailModel?.description || "No description provided."}
+                            </Text>
+
+                            <Text style={styles.sectionTitle}>Pricing (per 1M tokens)</Text>
+                            <View style={styles.priceRow}>
+                                <View>
+                                    <Text style={styles.priceLabel}>Input</Text>
+                                    <Text style={styles.priceValue}>
+                                        ${(parseFloat(detailModel?.pricing.prompt || '0') * 1000000).toFixed(4)}
+                                    </Text>
+                                </View>
+                                <View>
+                                    <Text style={styles.priceLabel}>Output</Text>
+                                    <Text style={styles.priceValue}>
+                                        ${(parseFloat(detailModel?.pricing.completion || '0') * 1000000).toFixed(4)}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.modelIdFull}>{detailModel?.id}</Text>
+                        </ScrollView>
+
+                        <TouchableOpacity
+                            style={styles.selectButton}
+                            onPress={() => detailModel && handleSelect(detailModel)}
+                        >
+                            <Text style={styles.selectButtonText}>Select Model</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#1C1C1E',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: 60,
+        paddingBottom: 20,
+        backgroundColor: '#2C2C2E',
+    },
+    title: {
+        color: '#E5D0AC',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    closeBtn: {
+        padding: 4,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#2C2C2E',
+        margin: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        gap: 12,
+    },
+    searchInput: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 16,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#666',
+        marginTop: 12,
+    },
+    listContent: {
+        padding: 16,
+        gap: 12,
+    },
+    card: {
+        backgroundColor: '#2C2C2E',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    selectedCard: {
+        borderColor: '#E5D0AC',
+        backgroundColor: 'rgba(229, 208, 172, 0.1)',
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        gap: 8,
+    },
+    modelName: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        flex: 1,
+    },
+    modelId: {
+        color: '#666',
+        fontSize: 12,
+        marginBottom: 8,
+    },
+    freeBadge: {
+        backgroundColor: '#34D399',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    freeText: {
+        color: '#065F46',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    selectedBadge: {
+        backgroundColor: '#E5D0AC',
+        borderRadius: 10,
+        padding: 2,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    infoText: {
+        color: '#A1A1AA',
+        fontSize: 12,
+    },
+    priceText: {
+        color: '#A1A1AA',
+        fontSize: 12,
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#1C1C1E',
+        height: '70%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    modalTitle: {
+        color: '#FFF',
+        fontSize: 20,
+        fontWeight: 'bold',
+        flex: 1,
+    },
+    modalBody: {
+        flex: 1,
+    },
+    tagRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 24,
+    },
+    freeBadgeLarge: {
+        backgroundColor: '#34D399',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    freeTextLarge: {
+        color: '#065F46',
+        fontWeight: 'bold',
+    },
+    ctxBadge: {
+        backgroundColor: '#2C2C2E',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    ctxText: {
+        color: '#E5D0AC',
+    },
+    sectionTitle: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        marginTop: 16,
+    },
+    description: {
+        color: '#A1A1AA',
+        lineHeight: 22,
+        fontSize: 14,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        gap: 32,
+        backgroundColor: '#2C2C2E',
+        padding: 16,
+        borderRadius: 12,
+    },
+    priceLabel: {
+        color: '#666',
+        fontSize: 12,
+        marginBottom: 4,
+    },
+    priceValue: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    modelIdFull: {
+        color: '#444',
+        fontSize: 12,
+        marginTop: 24,
+        fontFamily: 'Courier',
+    },
+    selectButton: {
+        backgroundColor: '#E5D0AC',
+        padding: 18,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    selectButtonText: {
+        color: '#1C1C1E',
+        fontWeight: 'bold',
+        fontSize: 16,
+    }
+});

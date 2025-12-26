@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
+import ModelBrowserScreen from '../screens/settings/ModelBrowserScreen';
 import { ActivityIndicator, View } from 'react-native';
+import { RootStackParamList } from './types';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
     const { user, loading, initAuth } = useAuthStore();
@@ -11,9 +16,6 @@ export default function RootNavigator() {
 
     useEffect(() => {
         initAuth();
-        // Allow time for initial auth check (short delay or until loading false)
-        // Actually, initAuth sets up listener which updates loading.
-        // We just need to trigger it.
         setIsReady(true);
     }, []);
 
@@ -27,7 +29,20 @@ export default function RootNavigator() {
 
     return (
         <NavigationContainer>
-            {user ? <MainNavigator /> : <AuthNavigator />}
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {!user ? (
+                    <Stack.Screen name="Auth" component={AuthNavigator} />
+                ) : (
+                    <>
+                        <Stack.Screen name="Main" component={MainNavigator} />
+                        <Stack.Screen
+                            name="ModelBrowser"
+                            component={ModelBrowserScreen}
+                            options={{ presentation: 'modal' }}
+                        />
+                    </>
+                )}
+            </Stack.Navigator>
         </NavigationContainer>
     );
 }
