@@ -11,6 +11,23 @@ import { Home, Activity, MessageCircle, Settings, Terminal } from 'lucide-react-
 
 const Tab = createBottomTabNavigator<MainTabParamList & { Debug: undefined }>();
 
+export const getTabBarIcon = (routeName: string, { color, size }: { color: string; size: number }) => {
+    switch (routeName) {
+        case 'Dashboard':
+            return <Home color={color} size={size} />;
+        case 'Activity':
+            return <Activity color={color} size={size} />;
+        case 'Chat':
+            return <MessageCircle color={color} size={size} />;
+        case 'Settings':
+            return <Settings color={color} size={size} />;
+        case 'Debug':
+            return <Terminal color={color} size={size} />;
+        default:
+            return <Home color={color} size={size} />;
+    }
+};
+
 export default function MainNavigator() {
     return (
         <Tab.Navigator
@@ -23,22 +40,7 @@ export default function MainNavigator() {
                 },
                 tabBarActiveTintColor: '#E5D0AC',
                 tabBarInactiveTintColor: '#666',
-                tabBarIcon: ({ color, size, focused }) => {
-                    switch (route.name) {
-                        case 'Dashboard':
-                            return <Home color={color} size={size} />;
-                        case 'Activity':
-                            return <Activity color={color} size={size} />;
-                        case 'Chat':
-                            return <MessageCircle color={color} size={size} />;
-                        case 'Settings':
-                            return <Settings color={color} size={size} />;
-                        case 'Debug':
-                            return <Terminal color={color} size={size} />;
-                        default:
-                            return <Home color={color} size={size} />;
-                    }
-                },
+                tabBarIcon: (props) => getTabBarIcon(route.name, props),
             })}
         >
             <Tab.Screen name="Dashboard" component={DashboardScreen} />

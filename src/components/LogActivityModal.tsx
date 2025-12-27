@@ -201,6 +201,7 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
                                             <Text style={styles.label}>Set Reminder</Text>
                                         </View>
                                         <Switch
+                                            testID="reminder-switch"
                                             value={hasReminder}
                                             onValueChange={setHasReminder}
                                             trackColor={{ false: "#2C2C2E", true: "#E5D0AC" }}

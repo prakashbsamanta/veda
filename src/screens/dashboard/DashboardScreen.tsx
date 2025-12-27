@@ -72,7 +72,7 @@ export default function DashboardScreen({ navigation }: Props) {
                         />
                     </View>
                     <View>
-                        <Text style={styles.greeting}>Good Morning,</Text>
+                        <Text style={styles.greeting}>{greeting},</Text>
                         <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}!</Text>
                     </View>
                 </View>

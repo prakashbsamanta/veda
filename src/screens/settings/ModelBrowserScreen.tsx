@@ -108,7 +108,7 @@ export default function ModelBrowserScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn} testID="close-browser-btn">
                     <X color="#FFF" size={24} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Browse Models</Text>
@@ -147,12 +147,13 @@ export default function ModelBrowserScreen() {
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setDetailModel(null)}
+                testID="model-detail-modal"
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>{detailModel?.name}</Text>
-                            <TouchableOpacity onPress={() => setDetailModel(null)}>
+                            <TouchableOpacity onPress={() => setDetailModel(null)} testID="close-modal-btn">
                                 <X color="#A1A1AA" size={24} />
                             </TouchableOpacity>
                         </View>
