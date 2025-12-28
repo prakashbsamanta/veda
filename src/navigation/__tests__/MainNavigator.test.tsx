@@ -29,11 +29,11 @@ jest.mock('../../screens/DebugScreen', () => {
 jest.mock('lucide-react-native', () => {
     const { Text } = require('react-native');
     return {
-        Home: (props) => <Text>Home-Icon</Text>,
-        Activity: (props) => <Text>Activity-Icon</Text>,
-        MessageCircle: (props) => <Text>MessageCircle-Icon</Text>,
-        Settings: (props) => <Text>Settings-Icon</Text>,
-        Terminal: (props) => <Text>Terminal-Icon</Text>,
+        Home: (props: any) => <Text>Home-Icon</Text>,
+        Activity: (props: any) => <Text>Activity-Icon</Text>,
+        MessageCircle: (props: any) => <Text>MessageCircle-Icon</Text>,
+        Settings: (props: any) => <Text>Settings-Icon</Text>,
+        Terminal: (props: any) => <Text>Terminal-Icon</Text>,
     };
 });
 

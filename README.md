@@ -1,5 +1,7 @@
 # Veda
 
+![CI](https://github.com/prakashsamanta/Veda/actions/workflows/ci.yml/badge.svg)
+
 **Veda** is a privacy-first, AI-powered personal assistant that intelligently tracks daily activities, tasks, reminders, and expenses—learning user patterns to automate lifecycle management with zero cloud costs.
 
 ## Features
