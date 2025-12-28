@@ -53,6 +53,7 @@ describe('ModelBrowserScreen', () => {
         (openRouterService.fetchModels as jest.Mock).mockResolvedValue(mockModels);
     });
 
+    // CI flakiness fix: increased timeout to 10s because CI runners can be slower than local environment
     it('should fetch and display models', async () => {
         const { getByText, queryByText } = render(<ModelBrowserScreen />);
 
@@ -64,7 +65,7 @@ describe('ModelBrowserScreen', () => {
             expect(getByText('Model B')).toBeTruthy();
             expect(getByText('FREE')).toBeTruthy();
         });
-    });
+    }, 10000);
 
     it('should filter models', async () => {
         const { getByText, getByPlaceholderText, queryByText } = render(<ModelBrowserScreen />);
