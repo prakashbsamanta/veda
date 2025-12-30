@@ -182,12 +182,13 @@ export default function SettingsScreen() {
                         )}
 
                         <View style={styles.actionButtons}>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <TouchableOpacity testID="save-key-btn" style={styles.saveButton} onPress={handleSave}>
                                 <Save size={16} color="#1C1C1E" />
                                 <Text style={styles.saveButtonText}>Save Key</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
+                                testID="test-connection-btn"
                                 style={[styles.testButton, isTesting && { opacity: 0.7 }]}
                                 onPress={handleTestConnection}
                                 disabled={isTesting}
@@ -286,7 +287,7 @@ export default function SettingsScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={handleLogout}>
                     <LogOut color="#FF453A" size={20} />
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>

@@ -1,60 +1,92 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import LogActivityModal from '../LogActivityModal';
 import { activityService } from '../../services/database/ActivityService';
-import { notificationService } from '../../services/notifications/NotificationService';
 import { useAuthStore } from '../../store/authStore';
-import { Alert } from 'react-native';
 
-// Mock Dependencies
-jest.mock('lucide-react-native', () => ({
-    X: 'X', Check: 'Check', FileText: 'FileText',
-    CheckSquare: 'CheckSquare', DollarSign: 'DollarSign',
-    Plus: 'Plus', AlarmClock: 'AlarmClock'
-}));
-
+// Mock dependencies
 jest.mock('../../services/database/ActivityService', () => ({
     activityService: {
         createActivity: jest.fn(),
-    }
-}));
-
-jest.mock('../../services/notifications/NotificationService', () => ({
-    notificationService: {
-        scheduleNotificationAtDate: jest.fn(),
-    }
+        updateActivity: jest.fn(),
+        deleteActivity: jest.fn(),
+    },
 }));
 
 jest.mock('../../store/authStore', () => ({
     useAuthStore: jest.fn(),
 }));
 
-jest.mock('@react-native-community/datetimepicker', () => {
-    const { View, Button } = require('react-native');
-    const MockDateTimePicker = (props: any) => {
+jest.mock('lucide-react-native', () => ({
+    X: 'X', Check: 'Check', FileText: 'FileText',
+    CheckSquare: 'CheckSquare', DollarSign: 'DollarSign',
+    Plus: 'Plus', AlarmClock: 'AlarmClock',
+    Activity: 'Activity',
+    Trash: 'Trash',
+    Repeat: 'Repeat',
+    ChevronRight: 'ChevronRight',
+    ChevronLeft: 'ChevronLeft'
+}));
+
+jest.mock('expo-notifications', () => ({
+    scheduleNotificationAsync: jest.fn(),
+    cancelScheduledNotificationAsync: jest.fn(),
+    setNotificationHandler: jest.fn(),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+}));
+
+jest.mock('expo-device', () => ({
+    isDevice: true,
+    osName: 'iOS',
+}));
+
+// Mock CustomAlertModal
+jest.mock('../../components/common/CustomAlertModal', () => {
+    const { View, Text, TouchableOpacity } = require('react-native');
+    return ({ visible, title, message, buttons, onClose }: any) => {
+        if (!visible) return null;
         return (
-            <View testID="mock-datepicker">
-                <Button
-                    title="Confirm Date"
-                    onPress={() => props.onChange({ type: 'set' }, new Date('2025-12-25T10:00:00'))}
-                />
+            <View testID="custom-alert-modal">
+                <Text testID="alert-title">{title}</Text>
+                {message && <Text>{message}</Text>}
+                {buttons && buttons.map((btn: any, idx: number) => (
+                    <TouchableOpacity key={idx} testID={`alert-button-${idx}`} onPress={btn.onPress}>
+                        <Text>{btn.text}</Text>
+                    </TouchableOpacity>
+                ))}
+                {!buttons && (
+                    <TouchableOpacity onPress={onClose}><Text>OK</Text></TouchableOpacity>
+                )}
             </View>
         );
     };
-    return MockDateTimePicker;
 });
 
-// Spy on Alert
-jest.spyOn(Alert, 'alert');
+// Mock CustomDatePickerModal
+jest.mock('../../components/common/CustomDatePickerModal', () => {
+    const { View, Text, TouchableOpacity } = require('react-native');
+    return (props: any) => {
+        if (!props.visible) return null;
+        return (
+            <View testID="custom-date-picker">
+                <Text>Confirm Date</Text>
+                <TouchableOpacity onPress={() => props.onSelect(new Date())}>
+                    <Text>Confirm</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    };
+});
 
 describe('LogActivityModal', () => {
     const mockOnClose = jest.fn();
     const mockOnSave = jest.fn();
-    const mockUser = { uid: 'test-uid' };
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useAuthStore as unknown as jest.Mock).mockReturnValue({ user: mockUser });
+        (useAuthStore as unknown as jest.Mock).mockReturnValue({
+            user: { uid: 'test-user-id' }
+        });
     });
 
     it('should render correctly when visible', () => {
@@ -66,27 +98,28 @@ describe('LogActivityModal', () => {
         expect(getByPlaceholderText("What's this about?")).toBeTruthy();
     });
 
-    it('should validate empty title', async () => {
-        const { getByText } = render(
+    it('should validate empty title', () => {
+        const { getByText, getByTestId } = render(
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
         fireEvent.press(getByText('Save Entry'));
-
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please enter a title');
+        expect(getByTestId('alert-title').children[0]).toBe('Error'); // Check alert title specifically
+        expect(getByText('Please enter a title')).toBeTruthy();
         expect(activityService.createActivity).not.toHaveBeenCalled();
     });
 
     it('should validate empty amount for expense', () => {
-        const { getByText, getByPlaceholderText } = render(
+        const { getByText, getByPlaceholderText, getByTestId } = render(
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
         fireEvent.press(getByText('Expense'));
-        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Dinner');
+        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Test Expense');
         fireEvent.press(getByText('Save Entry'));
 
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please enter an amount');
+        expect(getByTestId('alert-title').children[0]).toBe('Error');
+        expect(getByText('Please enter an amount')).toBeTruthy();
     });
 
     it('should save a valid note activity', async () => {
@@ -94,19 +127,19 @@ describe('LogActivityModal', () => {
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
-        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Meeting');
-        fireEvent.changeText(getByPlaceholderText("Add details (optional)"), 'Discuss project');
-
+        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Test Note');
+        fireEvent.changeText(getByPlaceholderText('Add details (optional)'), 'Test Desc');
         fireEvent.press(getByText('Save Entry'));
 
         await waitFor(() => {
-            expect(activityService.createActivity).toHaveBeenCalledWith('test-uid', {
-                type: 'note',
-                title: 'Meeting',
-                description: 'Discuss project',
-                amount: undefined,
-                currency: 'INR'
-            });
+            expect(activityService.createActivity).toHaveBeenCalledWith(
+                'test-user-id',
+                expect.objectContaining({
+                    type: 'note',
+                    title: 'Test Note',
+                    description: 'Test Desc'
+                })
+            );
             expect(mockOnSave).toHaveBeenCalled();
             expect(mockOnClose).toHaveBeenCalled();
         });
@@ -119,53 +152,34 @@ describe('LogActivityModal', () => {
 
         fireEvent.press(getByText('Expense'));
         fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Lunch');
-        fireEvent.changeText(getByPlaceholderText("0.00"), '500');
-
+        fireEvent.changeText(getByPlaceholderText('0.00'), '20');
         fireEvent.press(getByText('Save Entry'));
 
         await waitFor(() => {
-            expect(activityService.createActivity).toHaveBeenCalledWith('test-uid', {
-                type: 'expense',
-                title: 'Lunch',
-                description: '',
-                amount: 500,
-                currency: 'INR'
-            });
-        });
-    });
-
-    it('should handle task with reminder', async () => {
-        const { getByText, getByPlaceholderText, getByTestId } = render(
-            <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
-        );
-
-        fireEvent.press(getByText('Task'));
-        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Call Mom');
-
-        const switchEl = getByTestId('reminder-switch');
-        fireEvent(switchEl, 'valueChange', true);
-
-        fireEvent.press(getByText('Save Entry'));
-
-        await waitFor(() => {
-            expect(activityService.createActivity).toHaveBeenCalledWith('test-uid', expect.objectContaining({
-                type: 'task',
-                title: 'Call Mom'
-            }));
+            expect(activityService.createActivity).toHaveBeenCalledWith(
+                'test-user-id',
+                expect.objectContaining({
+                    type: 'expense',
+                    title: 'Lunch',
+                    amount: 20
+                })
+            );
         });
     });
 
     it('should handle save error', async () => {
-        (activityService.createActivity as jest.Mock).mockRejectedValue(new Error('Save Failed'));
-        const { getByText, getByPlaceholderText } = render(
+        (activityService.createActivity as jest.Mock).mockRejectedValue(new Error('Save failed'));
+
+        const { getByText, getByPlaceholderText, getByTestId } = render(
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
-        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Error Note');
+        fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Fail Note');
         fireEvent.press(getByText('Save Entry'));
 
         await waitFor(() => {
-            expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to save activity');
+            expect(getByTestId('alert-title').children[0]).toBe('Error'); // Check alert
+            expect(getByText('Failed to save activity')).toBeTruthy();
         });
     });
 
@@ -175,14 +189,97 @@ describe('LogActivityModal', () => {
         );
 
         fireEvent.press(getByText('Task'));
-        fireEvent(getByTestId('reminder-switch'), 'valueChange', true);
+        const switchEl = getByTestId('reminder-switch');
+        fireEvent(switchEl, 'valueChange', true);
 
         const dateBtn = getByText(/at/);
         fireEvent.press(dateBtn);
 
-        const confirmBtn = getByText('Confirm Date');
-        fireEvent.press(confirmBtn);
+        expect(getByText('Confirm Date')).toBeTruthy();
+        fireEvent.press(getByText('Confirm'));
+    });
 
-        fireEvent.press(getByText('Confirm Date')); // Confirm Time
+    it('should handle delete activity', async () => {
+        const initialActivity = {
+            id: '123',
+            type: 'note',
+            title: 'Delete Me',
+            created_at: 123,
+            updated_at: 123
+        };
+
+        const { getByText, getByTestId } = render(
+            <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} initialActivity={initialActivity as any} />
+        );
+
+        const deleteBtn = getByText('Delete Activity');
+        fireEvent.press(deleteBtn);
+
+        // Ambiguity fix: Check for alert title specifically using testID
+        expect(getByTestId('alert-title').children[0]).toBe('Delete Activity');
+        expect(getByText('Are you sure you want to delete this activity?')).toBeTruthy();
+
+        // Confirm delete (mock alert renders custom buttons)
+        fireEvent.press(getByText('Delete'));
+
+        await waitFor(() => {
+            expect(activityService.deleteActivity).toHaveBeenCalledWith('123');
+            expect(mockOnSave).toHaveBeenCalled();
+            expect(mockOnClose).toHaveBeenCalled();
+        });
+    });
+
+    it('should handle delete failure', async () => {
+        (activityService.deleteActivity as jest.Mock).mockRejectedValue(new Error('Delete invalid'));
+        const initialActivity = {
+            id: '123',
+            type: 'note',
+            title: 'Delete Me'
+        };
+
+        const { getByText, getByTestId } = render(
+            <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} initialActivity={initialActivity as any} />
+        );
+
+        fireEvent.press(getByText('Delete Activity'));
+        fireEvent.press(getByText('Delete'));
+
+        await waitFor(() => {
+            expect(getByTestId('alert-title').children[0]).toBe('Error');
+            expect(getByText('Failed to delete activity')).toBeTruthy();
+        });
+    });
+
+    it('should parse existing recurrent activity', () => {
+        const initial = {
+            id: '1', type: 'task', title: 'Recurring', recurrence_rule: '{"frequency":"daily"}'
+        };
+
+        const { getByText, getByTestId } = render(
+            <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} initialActivity={initial as any} />
+        );
+
+        // Fix: Reminder defaults to false on edit, so we must toggle it to see recurrence
+        const switchEl = getByTestId('reminder-switch');
+        fireEvent(switchEl, 'valueChange', true);
+
+        expect(getByText(/daily/i)).toBeTruthy();
+    });
+
+    it('should handle malformed recurrence rule', () => {
+        const initial = {
+            id: '1', type: 'task', title: 'Bad JSON', recurrence_rule: '{badjson'
+        };
+
+        const { queryByText, getByTestId } = render(
+            <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} initialActivity={initial as any} />
+        );
+
+        // Toggle reminder
+        const switchEl = getByTestId('reminder-switch');
+        fireEvent(switchEl, 'valueChange', true);
+
+        // Recurrence rule undefined -> text shouldn't show "Repeats"
+        expect(queryByText(/Repeats/)).toBeNull();
     });
 });

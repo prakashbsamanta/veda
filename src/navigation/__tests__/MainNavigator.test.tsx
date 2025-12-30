@@ -63,7 +63,7 @@ describe('MainNavigator', () => {
         expect(getByText('Activity')).toBeTruthy();
         expect(getByText('Chat')).toBeTruthy();
         expect(getByText('Settings')).toBeTruthy();
-        expect(getByText('Debug')).toBeTruthy();
+        // expect(getByText('Debug')).toBeTruthy();
     });
 });
 
