@@ -1,41 +1,58 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Linking, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
-import { useSettingsStore } from '../../store/settingsStore';
 import { authService } from '../../services/auth/AuthService';
-import { LogOut, ChevronRight, Brain, Zap, User as UserIcon, Info, Cloud, Check, Loader as Loader2, AlertTriangle, Save } from 'lucide-react-native';
+import { LogOut, Key, Globe, Brain, Info, Check, Code, ExternalLink, Zap, Cloud, Save, AlertTriangle, Loader as Loader2, ChevronRight } from 'lucide-react-native';
+import { useSettingsStore } from '../../store/settingsStore';
+import CustomAlertModal from '../../components/common/CustomAlertModal';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
     const navigation = useNavigation<any>();
     const { user } = useAuthStore();
-    const { provider, setProvider, openRouterKey, setOpenRouterKey, selectedModel } = useSettingsStore();
+    const {
+        provider,
+        openRouterKey,
+        geminiKey,
+        perplexityKey,
+        selectedModel,
+        setProvider,
+        setOpenRouterKey,
+        setGeminiKey,
+        setPerplexityKey
+    } = useSettingsStore();
 
-    // const [keyInput, setKeyInput] = React.useState(openRouterKey); // Moved to ProviderCard
+    // Custom Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message?: string;
+        buttons?: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }[];
+    }>({ visible: false, title: '' });
 
-    // React.useEffect(() => {
-    //     setKeyInput(openRouterKey);
-    // }, [openRouterKey]);
+    const showAlert = (title: string, message?: string, buttons?: any[]) => {
+        setAlertConfig({ visible: true, title, message, buttons });
+    };
 
-    // const handleKeySave = () => {
-    //     setOpenRouterKey(keyInput);
-    //     Alert.alert("Success", "OpenRouter Key Saved");
-    // };
+    const hideAlert = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
 
-    const handleLogout = async () => {
-        Alert.alert(
+    const handleLogout = () => {
+        showAlert(
             "Log Out",
             "Are you sure you want to log out?",
             [
-                { text: "Cancel", style: "cancel" },
+                { text: "Cancel", style: "cancel", onPress: hideAlert },
                 {
                     text: "Log Out",
                     style: "destructive",
                     onPress: async () => {
                         try {
                             await authService.signOut();
-                        } catch (e) {
-                            Alert.alert("Error", "Failed to log out");
+                            hideAlert();
+                        } catch (error) {
+                            showAlert("Error", "Failed to log out", [{ text: "OK", onPress: hideAlert }]);
                         }
                     }
                 }
@@ -43,34 +60,23 @@ export default function SettingsScreen() {
         );
     };
 
-    const ProviderCard = ({ id, name, icon, description }: { id: 'gemini' | 'perplexity' | 'openrouter', name: string, icon: React.ReactNode, description: string }) => {
+    // Helper to render provider cards
+    const renderProviderCard = (id: 'gemini' | 'perplexity' | 'openrouter', name: string, icon: React.ReactNode, description: string) => {
         const isActive = provider === id;
+        const [localKey, setLocalKey] = useState('');
+        const [isTesting, setIsTesting] = useState(false);
 
-        const getKeyValue = () => {
-            if (id === 'openrouter') return openRouterKey;
-            if (id === 'gemini') return useSettingsStore.getState().geminiKey;
-            if (id === 'perplexity') return useSettingsStore.getState().perplexityKey;
-            return '';
-        };
-
-        const setKeyValue = (text: string) => {
-            if (id === 'openrouter') setOpenRouterKey(text);
-            if (id === 'gemini') useSettingsStore.getState().setGeminiKey(text);
-            if (id === 'perplexity') useSettingsStore.getState().setPerplexityKey(text);
-        };
-
-        const [localKey, setLocalKey] = React.useState(getKeyValue());
-        const [isTesting, setIsTesting] = React.useState(false);
-        const [isValidating, setIsValidating] = React.useState(false);
-
-        React.useEffect(() => {
-            setLocalKey(getKeyValue());
-        }, [provider]);
+        // Sync local key with store when provider or keys change
+        useEffect(() => {
+            if (id === 'openrouter') setLocalKey(openRouterKey || '');
+            else if (id === 'gemini') setLocalKey(geminiKey || '');
+            else if (id === 'perplexity') setLocalKey(perplexityKey || '');
+        }, [id, openRouterKey, geminiKey, perplexityKey]);
 
         const validateFormat = (text: string) => {
             if (!text) return true;
             if (id === 'openrouter' && !text.startsWith('sk-or-')) return false;
-            if (id === 'gemini' && !text.startsWith('AIza')) return false;
+            // if (id === 'gemini' && !text.startsWith('AIza')) return false; // Gemini keys vary
             if (id === 'perplexity' && !text.startsWith('pplx-')) return false;
             return true;
         };
@@ -79,28 +85,52 @@ export default function SettingsScreen() {
 
         const handleSave = () => {
             if (!localKey.trim()) {
-                Alert.alert("Invalid Key", "Please enter an API Key.");
+                showAlert("Invalid Key", "Please enter an API Key.", [{ text: "OK", onPress: hideAlert }]);
                 return;
             }
-            setKeyValue(localKey);
-            Alert.alert("Saved", `${name} Key Saved Successfully.`);
+            if (id === 'openrouter') setOpenRouterKey(localKey);
+            else if (id === 'gemini') setGeminiKey(localKey);
+            else if (id === 'perplexity') setPerplexityKey(localKey);
+
+            showAlert("Saved", `${name} Key Saved Successfully.`, [{ text: "OK", onPress: hideAlert }]);
         };
 
         const handleTestConnection = async () => {
             if (!localKey.trim()) {
-                Alert.alert("Missing Key", "Please save a key first.");
+                showAlert("Missing Key", "Please save a key first.", [{ text: "OK", onPress: hideAlert }]);
                 return;
             }
 
             setIsTesting(true);
-            const { cloudAIService } = require('../../services/ai/CloudAIService');
-            const success = await cloudAIService.testConnection(id, localKey);
-            setIsTesting(false);
+            try {
+                // Determine URL based on provider
+                let url = '';
+                let headers: any = {};
 
-            if (success) {
-                Alert.alert("Connection Successful", `Successfully connected to ${name}!`);
-            } else {
-                Alert.alert("Connection Failed", `Could not verify key with ${name}. Please check the key and your internet connection.`);
+                if (id === 'openrouter') {
+                    url = 'https://openrouter.ai/api/v1/auth/key';
+                    headers = { 'Authorization': `Bearer ${localKey}` };
+                } else if (id === 'perplexity') {
+                    url = 'https://api.perplexity.ai/models'; // Simple endpoint to test auth
+                    headers = { 'Authorization': `Bearer ${localKey}` };
+                } else if (id === 'gemini') {
+                    // Gemini usually requires a query param key, but for generic test we might need a specific endpoint
+                    // For now, let's assume if we saved it, it's "verified" enough or mock a call.
+                    // Or call a simple list models endpoint
+                    url = `https://generativelanguage.googleapis.com/v1beta/models?key=${localKey}`;
+                }
+
+                const response = await fetch(url, { method: 'GET', headers });
+
+                if (response.ok) {
+                    showAlert("Connection Successful", `Successfully connected to ${name}!`, [{ text: "OK", onPress: hideAlert }]);
+                } else {
+                    showAlert("Connection Failed", `Could not verify key. Status: ${response.status}`, [{ text: "OK", onPress: hideAlert }]);
+                }
+            } catch (error) {
+                showAlert("Connection Error", "Network request failed.", [{ text: "OK", onPress: hideAlert }]);
+            } finally {
+                setIsTesting(false);
             }
         };
 
@@ -109,6 +139,7 @@ export default function SettingsScreen() {
                 style={[styles.providerCard, isActive && styles.providerCardActive]}
                 onPress={() => setProvider(id)}
                 activeOpacity={0.9}
+                key={id}
             >
                 <View style={styles.providerHeader}>
                     <View style={styles.providerIconContainer}>
@@ -192,75 +223,85 @@ export default function SettingsScreen() {
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <Text style={styles.screenTitle}>Settings</Text>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.content}>
+                <Text style={styles.screenTitle}>Settings</Text>
 
-            {/* Profile Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Profile</Text>
-                <View style={styles.profileCard}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {user?.email?.[0].toUpperCase() || 'U'}
-                        </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.userName}>
-                            {user?.displayName || user?.email?.split('@')[0] || 'User'}
-                        </Text>
-                        <Text style={styles.userEmail}>{user?.email}</Text>
+                {/* Profile Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Profile</Text>
+                    <View style={styles.profileCard}>
+                        <View style={styles.avatar}>
+                            <Text style={styles.avatarText}>
+                                {user?.email?.[0].toUpperCase() || 'U'}
+                            </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.userName}>
+                                {user?.displayName || user?.email?.split('@')[0] || 'User'}
+                            </Text>
+                            <Text style={styles.userEmail}>{user?.email}</Text>
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* AI Provider Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>AI Brain</Text>
-                <Text style={styles.sectionSubtitle}>Choose the intelligence engine powering Veda.</Text>
+                {/* AI Provider Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>AI Brain</Text>
+                    <Text style={styles.sectionSubtitle}>Choose the intelligence engine powering Veda.</Text>
 
-                <View style={styles.providerGrid}>
-                    <ProviderCard
-                        id="perplexity"
-                        name="Perplexity (Sonar)"
-                        icon={<Zap color={provider === 'perplexity' ? '#1C1C1E' : '#E5D0AC'} size={24} />}
-                        description="Best for real-time web search and up-to-date info."
-                    />
+                    <View style={styles.providerGrid}>
+                        {renderProviderCard(
+                            "perplexity",
+                            "Perplexity (Sonar)",
+                            <Zap color={provider === 'perplexity' ? '#1C1C1E' : '#E5D0AC'} size={24} />,
+                            "Best for real-time web search and up-to-date info."
+                        )}
 
-                    <ProviderCard
-                        id="gemini"
-                        name="Google Gemini"
-                        icon={<Brain color={provider === 'gemini' ? '#1C1C1E' : '#4A90E2'} size={24} />}
-                        description="Great for creative writing."
-                    />
+                        {renderProviderCard(
+                            "gemini",
+                            "Google Gemini",
+                            <Brain color={provider === 'gemini' ? '#1C1C1E' : '#4A90E2'} size={24} />,
+                            "Great for creative writing."
+                        )}
 
-                    <ProviderCard
-                        id="openrouter"
-                        name="OpenRouter (BYOK)"
-                        icon={<Cloud color={provider === 'openrouter' ? '#1C1C1E' : '#A855F7'} size={24} />}
-                        description="Access any model via your own key."
-                    />
-                </View>
-            </View>
-
-            {/* General Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
-                <TouchableOpacity style={styles.menuItem}>
-                    <View style={styles.menuIconInfo}>
-                        <Info color="#A1A1AA" size={20} />
+                        {renderProviderCard(
+                            "openrouter",
+                            "OpenRouter (BYOK)",
+                            <Cloud color={provider === 'openrouter' ? '#1C1C1E' : '#A855F7'} size={24} />,
+                            "Access any model via your own key."
+                        )}
                     </View>
-                    <Text style={styles.menuText}>Version</Text>
-                    <Text style={styles.versionText}>1.0.0 (Beta)</Text>
+                </View>
+
+                {/* General Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>About</Text>
+                    <TouchableOpacity style={styles.menuItem}>
+                        <View style={styles.menuIconInfo}>
+                            <Info color="#A1A1AA" size={20} />
+                        </View>
+                        <Text style={styles.menuText}>Version</Text>
+                        <Text style={styles.versionText}>1.0.0 (Beta)</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <LogOut color="#FF453A" size={20} />
+                    <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
-            </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <LogOut color="#FF453A" size={20} />
-                <Text style={styles.logoutText}>Log Out</Text>
-            </TouchableOpacity>
+                <Text style={styles.footerText}>Made with ❤️ by The Forge</Text>
+            </ScrollView>
 
-            <Text style={styles.footerText}>Made with ❤️ by The Forge</Text>
-        </ScrollView>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttons={alertConfig.buttons}
+                onClose={hideAlert}
+            />
+        </View>
     );
 }
 
@@ -335,7 +376,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     providerCardActive: {
-        backgroundColor: '#E5D0AC', // Gold background for active
+        backgroundColor: '#E5D0AC',
         borderColor: '#E5D0AC',
     },
     providerHeader: {
@@ -355,11 +396,11 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     textActive: {
-        color: '#1C1C1E', // Dark text on gold bg
+        color: '#1C1C1E',
     },
     providerDesc: {
         fontSize: 12,
-        color: '#888', // Make sure this is readable on both backgrounds, or condition it
+        color: '#888',
     },
     textActiveDesc: {
         color: '#1C1C1E',
@@ -380,7 +421,6 @@ const styles = StyleSheet.create({
         borderRadius: 3,
         backgroundColor: '#1C1C1E',
     },
-    // OpenRouter Config Styles
     configContainer: {
         marginTop: 12,
         paddingTop: 12,
@@ -393,7 +433,7 @@ const styles = StyleSheet.create({
     configLabel: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#1C1C1E', // Dark because it's inside the active card
+        color: '#1C1C1E',
         marginBottom: 4,
     },
     inputRow: {

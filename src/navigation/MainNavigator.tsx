@@ -47,7 +47,13 @@ export default function MainNavigator() {
             <Tab.Screen name="Activity" component={ActivityScreen} />
             <Tab.Screen name="Chat" component={ChatScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
-            <Tab.Screen name="Debug" component={DebugScreen} />
+            <Tab.Screen
+                name="Debug"
+                component={DebugScreen}
+                options={{
+                    tabBarButton: () => null
+                }}
+            />
         </Tab.Navigator>
     );
 }
