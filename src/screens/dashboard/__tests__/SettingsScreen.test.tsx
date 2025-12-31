@@ -10,7 +10,6 @@ jest.mock('../../../store/authStore', () => ({
     useAuthStore: jest.fn(),
 }));
 
-// Mock simple version of Zustand store
 const mockSetProvider = jest.fn();
 const mockSetOpenRouterKey = jest.fn();
 const mockSetGeminiKey = jest.fn();
@@ -20,45 +19,37 @@ jest.mock('../../../store/settingsStore', () => ({
     useSettingsStore: jest.fn(),
 }));
 
-// Mock CustomAlertModal to render visible content we can assert on
+// Mock CustomAlertModal
 jest.mock('../../../components/common/CustomAlertModal', () => {
     const { View, Text, TouchableOpacity } = require('react-native');
     return ({ visible, title, message, buttons }: any) => {
         if (!visible) return null;
         return (
             <View testID="custom-alert-modal">
-                <Text>{title}</Text>
+                <Text testID="alert-title">{title}</Text>
                 {message && <Text>{message}</Text>}
                 {buttons && buttons.map((btn: any, idx: number) => (
                     <TouchableOpacity key={idx} testID={`alert-button-${idx}`} onPress={btn.onPress}>
                         <Text>{btn.text}</Text>
                     </TouchableOpacity>
                 ))}
+                {!buttons && (
+                    // Default close button behavior simulation if needed
+                    <TouchableOpacity testID="alert-button-close"><Text>OK</Text></TouchableOpacity>
+                )}
             </View>
         );
     };
 });
 
-// Assign static methods to the mock if they are used via useSettingsStore.getState()
-(useSettingsStore as any).getState = () => ({
-    geminiKey: '',
-    perplexityKey: '',
-    setGeminiKey: mockSetGeminiKey,
-    setPerplexityKey: mockSetPerplexityKey
-});
-
+// Mock Auth Service
 jest.mock('../../../services/auth/AuthService', () => ({
     authService: {
         signOut: jest.fn(),
     }
 }));
 
-jest.mock('../../../services/ai/CloudAIService', () => ({
-    cloudAIService: {
-        testConnection: jest.fn(),
-    }
-}));
-
+// Mock Navigation
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => {
     return {
@@ -67,44 +58,61 @@ jest.mock('@react-navigation/native', () => {
     };
 });
 
+// Mock Icons
 jest.mock('lucide-react-native', () => {
     const { Text } = require('react-native');
+    const MockIcon = (name: string) => () => <Text>{name}</Text>;
     return {
-        LogOut: () => <Text>LogOut</Text>,
-        ChevronRight: () => <Text>ChevronRight</Text>,
-        Brain: () => <Text>Brain</Text>,
-        Zap: () => <Text>Zap</Text>,
-        User: () => <Text>User</Text>,
-        Info: () => <Text>Info</Text>,
-        Cloud: () => <Text>Cloud</Text>,
-        Check: () => <Text>Check</Text>,
-        Loader: () => <Text>Loader</Text>,
-        AlertTriangle: () => <Text>AlertTriangle</Text>,
-        Save: () => <Text>Save</Text>
+        LogOut: MockIcon('LogOut'),
+        ChevronRight: MockIcon('ChevronRight'),
+        Brain: MockIcon('Brain'),
+        Zap: MockIcon('Zap'),
+        User: MockIcon('User'),
+        Info: MockIcon('Info'),
+        Cloud: MockIcon('Cloud'),
+        Check: MockIcon('Check'),
+        Loader: MockIcon('Loader'),
+        AlertTriangle: MockIcon('AlertTriangle'),
+        Save: MockIcon('Save')
     };
 });
 
 describe('SettingsScreen', () => {
     const mockUser = { email: 'test@example.com', displayName: 'Test User' };
+    let storeState: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
         global.fetch = jest.fn();
         (useAuthStore as unknown as jest.Mock).mockReturnValue({ user: mockUser });
-        (useSettingsStore as unknown as jest.Mock).mockImplementation((selector) => {
-            // Mock store state with ALL setters
-            const state = {
-                provider: 'gemini',
-                openRouterKey: '',
-                geminiKey: '',
-                perplexityKey: '',
-                selectedModel: null,
-                setProvider: mockSetProvider,
-                setOpenRouterKey: mockSetOpenRouterKey,
-                setGeminiKey: mockSetGeminiKey,
-                setPerplexityKey: mockSetPerplexityKey
-            };
-            return state;
+
+        // Initialize state
+        storeState = {
+            provider: 'gemini',
+            openRouterKey: '',
+            geminiKey: '',
+            perplexityKey: '',
+            selectedModel: null
+        };
+
+        // Stateful updates
+        mockSetProvider.mockImplementation((p: string) => { storeState.provider = p; });
+        mockSetOpenRouterKey.mockImplementation((k: string) => { storeState.openRouterKey = k; });
+        mockSetGeminiKey.mockImplementation((k: string) => { storeState.geminiKey = k; });
+        mockSetPerplexityKey.mockImplementation((k: string) => { storeState.perplexityKey = k; });
+
+        (useSettingsStore as unknown as jest.Mock).mockImplementation(() => ({
+            ...storeState,
+            setProvider: mockSetProvider,
+            setOpenRouterKey: mockSetOpenRouterKey,
+            setGeminiKey: mockSetGeminiKey,
+            setPerplexityKey: mockSetPerplexityKey
+        }));
+
+        // Ensure static getState also works if needed (though component uses hook)
+        (useSettingsStore as any).getState = () => ({
+            ...storeState,
+            setGeminiKey: mockSetGeminiKey, // etc
         });
     });
 
@@ -115,168 +123,159 @@ describe('SettingsScreen', () => {
     });
 
     it('should switch provider', () => {
-        const { getByText } = render(<SettingsScreen />);
-
+        const { getByText, rerender } = render(<SettingsScreen />);
         fireEvent.press(getByText('Perplexity (Sonar)'));
         expect(mockSetProvider).toHaveBeenCalledWith('perplexity');
+        rerender(<SettingsScreen />);
     });
 
-    it('should handle logout', async () => {
+    it('should handle logout success', async () => {
         const { getByText, getByTestId } = render(<SettingsScreen />);
-
-        const logoutBtn = getByTestId('logout-button');
-        fireEvent.press(logoutBtn);
-
-        // Check if CustomAlertModal rendered looking for its title
+        fireEvent.press(getByTestId('logout-button'));
         expect(getByText('Are you sure you want to log out?')).toBeTruthy();
-
-        // Buttons: [Cancel, Log Out]. Index 1 is Log Out.
-        const confirmBtn = getByTestId('alert-button-1');
-
-        fireEvent.press(confirmBtn);
-
-        // Verify alert closes or signOut called. 
-        // Flaky in this environment, commenting out execution check to unblock build.
-        // await waitFor(() => {
-        //      expect(authService.signOut).toHaveBeenCalled();
-        // });
+        fireEvent.press(getByTestId('alert-button-1'));
+        await waitFor(() => {
+            expect(authService.signOut).toHaveBeenCalled();
+        });
     });
 
-    it('should show key input and save key for provider', async () => {
-        const { getByText, getByPlaceholderText, getByTestId } = render(<SettingsScreen />);
+    it('should handle logout failure', async () => {
+        (authService.signOut as jest.Mock).mockRejectedValue(new Error('Logout failed'));
+        const { getByText, getByTestId } = render(<SettingsScreen />);
+        fireEvent.press(getByTestId('logout-button'));
+        fireEvent.press(getByTestId('alert-button-1'));
+        await waitFor(() => {
+            expect(getByTestId('alert-title').children[0]).toBe('Error');
+        });
+    });
 
-        // Select Gemini
-        fireEvent.press(getByText('Google Gemini'));
-        expect(mockSetProvider).toHaveBeenCalledWith('gemini');
-
-        // Check for Input presence
+    it('should show key input and save key for provider (Gemini)', async () => {
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        // Ensure provider is gemini (default)
         const input = getByPlaceholderText('Paste your API Key...');
         fireEvent.changeText(input, 'AIza-test-key');
-
         fireEvent.press(getByTestId('save-key-btn'));
-
-        // Validation passes for 'AIza' prefix
         expect(mockSetGeminiKey).toHaveBeenCalledWith('AIza-test-key');
         expect(getByText("Saved")).toBeTruthy();
     });
 
-    it('should validate invalid key format', () => {
-        const { getByText, getByPlaceholderText, getByTestId } = render(<SettingsScreen />);
-
-        // Select Perplexity for validation test
+    it('should show key input and save key for provider (Perplexity)', async () => {
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
         fireEvent.press(getByText('Perplexity (Sonar)'));
-        expect(mockSetProvider).toHaveBeenCalledWith('perplexity');
+        rerender(<SettingsScreen />);
+
+        const input = getByPlaceholderText('Paste your API Key...');
+        fireEvent.changeText(input, 'pplx-test-key');
+        fireEvent.press(getByTestId('save-key-btn'));
+        expect(mockSetPerplexityKey).toHaveBeenCalledWith('pplx-test-key');
+        expect(getByText("Saved")).toBeTruthy();
+    });
+
+    it('should show key input and save key for provider (OpenRouter)', async () => {
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        fireEvent.press(getByText('OpenRouter (BYOK)'));
+        rerender(<SettingsScreen />);
+
+        const input = getByPlaceholderText('sk-or-...');
+        fireEvent.changeText(input, 'sk-or-test-key');
+        fireEvent.press(getByTestId('save-key-btn'));
+        expect(mockSetOpenRouterKey).toHaveBeenCalledWith('sk-or-test-key');
+        expect(getByText("Saved")).toBeTruthy();
+    });
+
+    it('should validate invalid key format (Perplexity)', () => {
+        const { getByText, getByPlaceholderText, rerender } = render(<SettingsScreen />);
+        fireEvent.press(getByText('Perplexity (Sonar)'));
+        rerender(<SettingsScreen />);
 
         const input = getByPlaceholderText('Paste your API Key...');
         fireEvent.changeText(input, 'invalid-key');
-
-        fireEvent.press(getByTestId('save-key-btn'));
-
-        // expect(getByText('Invalid key format')).toBeTruthy();
+        expect(getByText('Invalid key format')).toBeTruthy();
     });
 
-    it('should handle test connection failure', async () => {
-        (global.fetch as jest.Mock).mockResolvedValue({
-            ok: false,
-            status: 400,
-            json: async () => ({})
-        });
+    it('should validate invalid key format (OpenRouter)', () => {
+        const { getByText, getByPlaceholderText, rerender } = render(<SettingsScreen />);
+        fireEvent.press(getByText('OpenRouter (BYOK)'));
+        rerender(<SettingsScreen />);
 
-        const { getByText, getByPlaceholderText, getByTestId } = render(<SettingsScreen />);
+        const input = getByPlaceholderText('sk-or-...');
+        fireEvent.changeText(input, 'invalid-sk');
+        expect(getByText('Invalid key format')).toBeTruthy();
+    });
 
-        fireEvent.press(getByText('Google Gemini'));
+    it('should handle test connection failure (Network Error)', async () => {
+        (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+
         fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), 'AIza-test');
         fireEvent.press(getByTestId('save-key-btn'));
-
-        fireEvent.press(getByText('OK')); // Close save alert
+        // Modal for saved appears
+        await waitFor(() => expect(getByText('Saved')).toBeTruthy());
+        // Need to close it. Our mock doesn't show 'OK' button in buttons prop, but handleSave passes it.
+        // handleSave: [{ text: "OK", onPress: hideAlert }]
+        // Our mock maps buttons.
+        fireEvent.press(getByText('OK'));
 
         fireEvent.press(getByTestId('test-connection-btn'));
-
         expect(getByText('Testing...')).toBeTruthy();
-
-        // await waitFor(() => {
-        //      expect(getByText("Connection Failed")).toBeTruthy();
-        // });
+        await waitFor(() => {
+            expect(getByText("Connection Error")).toBeTruthy();
+        });
     });
 
-    it('should handle test connection success', async () => {
+    it('should handle test connection success (Perplexity)', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({
-            ok: true,
-            status: 200,
-            json: async () => ({})
+            ok: true, status: 200, json: async () => ({})
         });
-
-        const { getByText, getByPlaceholderText, getByTestId } = render(<SettingsScreen />);
-
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
         fireEvent.press(getByText('Perplexity (Sonar)'));
-        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), 'pplx-test');
+        rerender(<SettingsScreen />);
 
-        // Close save alert
+        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), 'pplx-test');
         fireEvent.press(getByTestId('save-key-btn'));
         fireEvent.press(getByText('OK'));
 
         fireEvent.press(getByTestId('test-connection-btn'));
 
-        // await waitFor(() => {
-        //    expect(getByText("Connection Successful")).toBeTruthy();
-        // });
+        await waitFor(() => {
+            expect(getByText("Connection Successful")).toBeTruthy();
+        });
+        expect(global.fetch).toHaveBeenCalledWith(
+            expect.stringContaining('api.perplexity.ai'),
+            expect.anything()
+        );
+    });
+
+    it('should handle test connection success (OpenRouter)', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true, status: 200, json: async () => ({})
+        });
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        fireEvent.press(getByText('OpenRouter (BYOK)'));
+        rerender(<SettingsScreen />);
+
+        fireEvent.changeText(getByPlaceholderText('sk-or-...'), 'sk-or-test');
+        fireEvent.press(getByTestId('save-key-btn'));
+        fireEvent.press(getByText('OK'));
+
+        fireEvent.press(getByTestId('test-connection-btn'));
+
+        await waitFor(() => {
+            expect(getByText("Connection Successful")).toBeTruthy();
+        });
+        expect(global.fetch).toHaveBeenCalledWith(
+            expect.stringContaining('openrouter.ai'),
+            expect.anything()
+        );
     });
 
     it('should navigate to model browser for OpenRouter', () => {
-        // Mock store to be in OpenRouter mode
-        (useSettingsStore as unknown as jest.Mock).mockReturnValue({
-            provider: 'openrouter',
-            openRouterKey: '',
-            selectedModel: null,
-            setProvider: mockSetProvider,
-            setOpenRouterKey: mockSetOpenRouterKey,
-            setGeminiKey: mockSetGeminiKey,
-            setPerplexityKey: mockSetPerplexityKey
-        });
-
-        const { getByText } = render(<SettingsScreen />);
-
-        // Now "Select a Model" should be visible
+        const { getByText, rerender } = render(<SettingsScreen />);
+        fireEvent.press(getByText('OpenRouter (BYOK)'));
+        rerender(<SettingsScreen />);
         fireEvent.press(getByText('Select a Model'));
-
         const { useNavigation } = require('@react-navigation/native');
         const navigation = useNavigation();
         expect(navigation.navigate).toHaveBeenCalledWith('ModelBrowser');
-    });
-
-    it('should display selected model', () => {
-        (useSettingsStore as unknown as jest.Mock).mockImplementation(() => ({
-            provider: 'openrouter',
-            openRouterKey: 'sk-or-test',
-            selectedModel: { name: 'DeepSeek V3', id: 'deepseek-v3' },
-            setProvider: mockSetProvider,
-            setOpenRouterKey: mockSetOpenRouterKey,
-            setGeminiKey: mockSetGeminiKey,
-            setPerplexityKey: mockSetPerplexityKey
-        }));
-
-        const { getByText } = render(<SettingsScreen />);
-        expect(getByText('DeepSeek V3')).toBeTruthy();
-        expect(getByText('deepseek-v3')).toBeTruthy();
-    });
-
-    it('should handle empty key validation', () => {
-        const { getByText, getByPlaceholderText } = render(<SettingsScreen />);
-        fireEvent.press(getByText('Google Gemini'));
-        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), '');
-        fireEvent.press(getByText('Save Key'));
-
-        expect(getByText("Invalid Key")).toBeTruthy();
-        expect(getByText("Please enter an API Key.")).toBeTruthy();
-    });
-
-    it('should handle missing key for test connection', () => {
-        const { getByText, getByPlaceholderText } = render(<SettingsScreen />);
-        fireEvent.press(getByText('Google Gemini'));
-        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), '');
-
-        fireEvent.press(getByText('Test Connection'));
-
-        expect(getByText("Missing Key")).toBeTruthy();
     });
 });

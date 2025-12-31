@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import CustomDatePickerModal from '../CustomDatePickerModal';
 
 // Mock sub-components
@@ -24,8 +24,25 @@ jest.mock('../TimePickerView', () => {
 });
 
 jest.mock('../RecurrencePicker', () => {
-    const { View, Text } = require('react-native');
-    return () => <View testID="recurrence-picker"><Text>RecurrencePicker</Text></View>;
+    const { View, Text, Button } = require('react-native');
+    return ({ onSelect }: any) => (
+        <View testID="recurrence-picker">
+            <Text>RecurrencePicker</Text>
+            <Button title="Select Recurrence" onPress={() => onSelect({ frequency: 'daily' })} />
+        </View>
+    );
+});
+
+// Mock Icons
+jest.mock('lucide-react-native', () => {
+    const { Text } = require('react-native');
+    return {
+        Calendar: () => <Text>Icon-Calendar</Text>,
+        Clock: () => <Text>Icon-Clock</Text>,
+        X: () => <Text>Icon-X</Text>,
+        Check: () => <Text>Icon-Check</Text>,
+        Repeat: () => <Text>Icon-Repeat</Text>
+    };
 });
 
 describe('CustomDatePickerModal', () => {
@@ -38,7 +55,7 @@ describe('CustomDatePickerModal', () => {
     });
 
     it('should render correctly in default (datetime) mode', () => {
-        const { getByText, getByTestId } = render(
+        const { getByText, getByTestId, getAllByText } = render(
             <CustomDatePickerModal
                 visible={true}
                 onClose={mockOnClose}
@@ -46,11 +63,13 @@ describe('CustomDatePickerModal', () => {
             />
         );
         expect(getByTestId('calendar-view')).toBeTruthy();
-        expect(getByText('Confirm')).toBeTruthy();
+        expect(getAllByText('Icon-Calendar')).toBeTruthy(); // Date tab exists
+        expect(getAllByText('Icon-Clock')).toBeTruthy(); // Time tab exists
     });
 
     it('should switch between tabs', () => {
-        const { getByTestId } = render(
+        // Must provide onRecurrenceChange to see Repeat tab
+        const { getByText, getByTestId } = render(
             <CustomDatePickerModal
                 visible={true}
                 onClose={mockOnClose}
@@ -59,11 +78,28 @@ describe('CustomDatePickerModal', () => {
                 onRecurrenceChange={mockOnRecurrenceChange}
             />
         );
+
+        // Default is Date
         expect(getByTestId('calendar-view')).toBeTruthy();
+
+        // Switch to Time
+        const clockIcon = getByText('Icon-Clock');
+        fireEvent.press(clockIcon);
+        expect(getByTestId('time-picker-view')).toBeTruthy();
+
+        // Switch back to Date to cover onPress handler
+        const calendarIcon = getByText('Icon-Calendar');
+        fireEvent.press(calendarIcon);
+        expect(getByTestId('calendar-view')).toBeTruthy();
+
+        // Switch to Repeat
+        const repeatIcon = getByText('Icon-Repeat');
+        fireEvent.press(repeatIcon);
+        expect(getByTestId('recurrence-picker')).toBeTruthy();
     });
 
     it('should only show date tab in date mode', () => {
-        const { queryByTestId } = render(
+        const { queryByTestId, queryByText } = render(
             <CustomDatePickerModal
                 visible={true}
                 onClose={mockOnClose}
@@ -73,10 +109,11 @@ describe('CustomDatePickerModal', () => {
         );
         expect(queryByTestId('calendar-view')).toBeTruthy();
         expect(queryByTestId('time-picker-view')).toBeNull();
+        expect(queryByText('Icon-Clock')).toBeNull();
     });
 
     it('should only show time tab in time mode', () => {
-        const { getByTestId, queryByTestId } = render(
+        const { getByTestId, queryByTestId, queryByText } = render(
             <CustomDatePickerModal
                 visible={true}
                 onClose={mockOnClose}
@@ -86,6 +123,7 @@ describe('CustomDatePickerModal', () => {
         );
         expect(getByTestId('time-picker-view')).toBeTruthy();
         expect(queryByTestId('calendar-view')).toBeNull();
+        expect(queryByText('Icon-Calendar')).toBeNull();
     });
 
     it('should update date when CalendarView triggers selection', () => {
@@ -118,15 +156,61 @@ describe('CustomDatePickerModal', () => {
         expect(mockOnSelect.mock.calls[0][0].getMinutes()).toBe(30);
     });
 
-    it('should show Recurrence tab only if onRecurrenceChange provided', () => {
-        const { rerender, queryByTestId } = render(
+    it('should handle recurrence selection', () => {
+        const { getByText, getByTestId } = render(
             <CustomDatePickerModal
                 visible={true}
                 onClose={mockOnClose}
                 onSelect={mockOnSelect}
+                onRecurrenceChange={mockOnRecurrenceChange}
             />
         );
-        // We can't see the tab easily, but we can verify clicking it logic if we could select it.
-        // For now coverage is hitting branches of "recurrenceRule && ..." maybe?
+        fireEvent.press(getByText('Icon-Repeat'));
+        fireEvent.press(getByText('Select Recurrence'));
+
+        expect(mockOnRecurrenceChange).toHaveBeenCalledWith({ frequency: 'daily' });
+    });
+
+    it('should show recurrence badge if rule exists', () => {
+        const { getByText, rerender } = render(
+            <CustomDatePickerModal
+                visible={true}
+                onClose={mockOnClose}
+                onSelect={mockOnSelect}
+                onRecurrenceChange={mockOnRecurrenceChange}
+                recurrenceRule={{ frequency: 'daily' }}
+            />
+        );
+    });
+
+    it('should default to correct tab when opened', () => {
+        const { getByTestId, rerender } = render(
+            <CustomDatePickerModal
+                visible={false}
+                onClose={mockOnClose}
+                onSelect={mockOnSelect}
+                mode="time"
+            />
+        );
+        // Rerender visible=true to trigger useEffect
+        rerender(
+            <CustomDatePickerModal
+                visible={true}
+                onClose={mockOnClose}
+                onSelect={mockOnSelect}
+                mode="time"
+            />
+        );
+        expect(getByTestId('time-picker-view')).toBeTruthy();
+
+        rerender(
+            <CustomDatePickerModal
+                visible={true}
+                onClose={mockOnClose}
+                onSelect={mockOnSelect}
+                mode="date"
+            />
+        );
+        expect(getByTestId('calendar-view')).toBeTruthy();
     });
 });

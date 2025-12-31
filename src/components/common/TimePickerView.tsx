@@ -119,6 +119,7 @@ export default function TimePickerView({ selectedDate, onTimeChange }: TimePicke
                             showsVerticalScrollIndicator={false}
                             snapToInterval={ITEM_HEIGHT}
                             decelerationRate="fast"
+                            initialNumToRender={12}
                             contentContainerStyle={{
                                 paddingVertical: ITEM_HEIGHT * CENTER_INDEX
                             }}
@@ -148,6 +149,7 @@ export default function TimePickerView({ selectedDate, onTimeChange }: TimePicke
                             showsVerticalScrollIndicator={false}
                             snapToInterval={ITEM_HEIGHT}
                             decelerationRate="fast"
+                            initialNumToRender={60}
                             contentContainerStyle={{
                                 paddingVertical: ITEM_HEIGHT * CENTER_INDEX
                             }}

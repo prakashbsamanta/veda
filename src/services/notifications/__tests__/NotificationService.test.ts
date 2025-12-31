@@ -1,6 +1,5 @@
 import { NotificationService } from '../NotificationService';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 // Augment global for mock state
@@ -40,7 +39,9 @@ describe('NotificationService', () => {
 
         // Reset device mock
         global.mockIsDevice = true;
-        Platform.OS = 'ios';
+
+        // Reset Platform to default (ios)
+        Object.defineProperty(Platform, 'OS', { get: () => 'ios', configurable: true });
 
         // Default permission mocks
         (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
@@ -50,8 +51,6 @@ describe('NotificationService', () => {
     it('should initialize and setup handler', () => {
         service = NotificationService.getInstance();
         expect(Notifications.setNotificationHandler).toHaveBeenCalled();
-
-        // Verify handler callback config
         const handler = (Notifications.setNotificationHandler as jest.Mock).mock.calls[0][0].handleNotification;
         expect(handler()).resolves.toEqual(expect.objectContaining({
             shouldShowAlert: true,
@@ -60,7 +59,9 @@ describe('NotificationService', () => {
     });
 
     it('should configure android channel on android', async () => {
-        Platform.OS = 'android';
+        // Mock Platform.OS to android
+        Object.defineProperty(Platform, 'OS', { get: () => 'android', configurable: true });
+
         service = NotificationService.getInstance();
         await service.registerForPushNotificationsAsync();
 
