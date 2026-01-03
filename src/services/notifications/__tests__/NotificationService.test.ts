@@ -1,6 +1,7 @@
 import { NotificationService } from '../NotificationService';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 // Augment global for mock state
 declare global {
@@ -162,5 +163,58 @@ describe('NotificationService', () => {
 
         const result = await service.scheduleNotificationAtDate('T', 'B', new Date());
         expect(result).toBe(false);
+    });
+    it('should skip setup in Expo Go on Android', () => {
+        Constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+        Object.defineProperty(Platform, 'OS', { get: () => 'android', configurable: true });
+
+        // Reset instance to trigger constructor again (which calls setupNotificationHandler)
+        (NotificationService as any).instance = undefined;
+        service = NotificationService.getInstance();
+
+        expect(Notifications.setNotificationHandler).not.toHaveBeenCalled();
+
+        // Reset Constants
+        Constants.executionEnvironment = ExecutionEnvironment.Standalone; // or generic string
+    });
+
+    it('should skip registration in Expo Go on Android', async () => {
+        Constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+        Object.defineProperty(Platform, 'OS', { get: () => 'android', configurable: true });
+
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+        service = NotificationService.getInstance();
+        await service.registerForPushNotificationsAsync();
+
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining('Expo Go detected'));
+        expect(Notifications.setNotificationChannelAsync).not.toHaveBeenCalled();
+
+        spy.mockRestore();
+        Constants.executionEnvironment = ExecutionEnvironment.Standalone;
+    });
+
+    it('should handle setNotificationHandler error', () => {
+        // Trigger error by mocking the set handler to throw
+        (Notifications.setNotificationHandler as jest.Mock).mockImplementation(() => { throw new Error('Handler fail'); });
+
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+
+        // Reset instance to call constructor
+        (NotificationService as any).instance = undefined;
+        new (NotificationService as any)();
+
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining('Failed to set notification handler'), expect.any(Error));
+        spy.mockRestore();
+    });
+
+    it('should handle cancelAllNotifications error', async () => {
+        (Notifications.cancelAllScheduledNotificationsAsync as jest.Mock).mockRejectedValue(new Error('Cancel fail'));
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+
+        service = NotificationService.getInstance();
+        await service.cancelAllNotifications();
+
+        expect(spy).toHaveBeenCalledWith('Error cancelling notifications:', expect.any(Error));
+        spy.mockRestore();
     });
 });

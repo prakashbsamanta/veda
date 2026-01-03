@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { authService } from '../../../services/auth/AuthService';
 
+
 // Mock Dependencies
 jest.mock('../../../store/authStore', () => ({
     useAuthStore: jest.fn(),
@@ -48,6 +49,7 @@ jest.mock('../../../services/auth/AuthService', () => ({
         signOut: jest.fn(),
     }
 }));
+
 
 // Mock Navigation
 const mockNavigate = jest.fn();
@@ -277,5 +279,65 @@ describe('SettingsScreen', () => {
         const { useNavigation } = require('@react-navigation/native');
         const navigation = useNavigation();
         expect(navigation.navigate).toHaveBeenCalledWith('ModelBrowser');
+    });
+    it('should show alert if saving empty key', () => {
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), '');
+        fireEvent.press(getByTestId('save-key-btn'));
+        expect(getByText('Invalid Key')).toBeTruthy();
+        expect(getByText('Please enter an API Key.')).toBeTruthy();
+    });
+
+    it('should show alert if testing connection with empty key', () => {
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), '');
+        fireEvent.press(getByTestId('test-connection-btn'));
+        expect(getByText('Missing Key')).toBeTruthy();
+        expect(getByText('Please save a key first.')).toBeTruthy();
+    });
+
+    it('should handle test connection failure status', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: false, status: 401, json: async () => ({})
+        });
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), 'bad-key');
+        fireEvent.press(getByTestId('save-key-btn'));
+        fireEvent.press(getByText('OK')); // Close save success
+
+        fireEvent.press(getByTestId('test-connection-btn'));
+        await waitFor(() => {
+            expect(getByText('Connection Failed')).toBeTruthy();
+            expect(getByText('Could not verify key. Status: 401')).toBeTruthy();
+        });
+    });
+    it('should handle test connection success (Gemini)', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true, status: 200, json: async () => ({})
+        });
+        const { getByText, getByPlaceholderText, getByTestId, rerender } = render(<SettingsScreen />);
+        // Gemini is default provider
+        fireEvent.changeText(getByPlaceholderText('Paste your API Key...'), 'AIza-test');
+        fireEvent.press(getByTestId('save-key-btn'));
+        fireEvent.press(getByText('OK'));
+
+        fireEvent.press(getByTestId('test-connection-btn'));
+
+        await waitFor(() => {
+            expect(getByText("Connection Successful")).toBeTruthy();
+        });
+        expect(global.fetch).toHaveBeenCalledWith(
+            expect.stringContaining('generativelanguage.googleapis.com'),
+            expect.anything()
+        );
+    });
+
+    it('should display selected model for OpenRouter', () => {
+        storeState.provider = 'openrouter';
+        storeState.selectedModel = { id: 'test-model', name: 'Test Model' };
+        const { getByText } = render(<SettingsScreen />);
+
+        expect(getByText('Test Model')).toBeTruthy();
+        expect(getByText('test-model')).toBeTruthy();
     });
 });

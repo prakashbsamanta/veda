@@ -59,6 +59,7 @@ describe('ChatScreen', () => {
         (useAuthStore as unknown as jest.Mock).mockReturnValue({ user: mockUser });
         (cloudAIService.generateText as jest.Mock).mockResolvedValue({ text: 'AI Response' });
         (cloudAIService.generateResponseFromAudio as jest.Mock).mockResolvedValue({ text: 'Audio Response' });
+        (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
 
         // Setup recording mock per test
         mockRecording = {
@@ -147,5 +148,68 @@ describe('ChatScreen', () => {
             expect(cloudAIService.generateResponseFromAudio).toHaveBeenCalledWith('base64audio');
             expect(getByText('Audio Response')).toBeTruthy();
         });
+    });
+    it('should handle permission denied', async () => {
+        (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+        const { getByText, getByPlaceholderText } = render(<ChatScreen />);
+        const micBtn = getByText('Mic');
+
+        await act(async () => {
+            fireEvent(micBtn, 'pressIn');
+        });
+
+        // Should show alert (mocked/spy needed usually, but logic stops before recording)
+        expect(Audio.Recording.createAsync).not.toHaveBeenCalled();
+    });
+
+    it('should handle start recording error', async () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+        (Audio.Recording.createAsync as jest.Mock).mockRejectedValue(new Error('Start Error'));
+        const { getByText } = render(<ChatScreen />);
+        const micBtn = getByText('Mic');
+
+        await act(async () => {
+            fireEvent(micBtn, 'pressIn');
+        });
+
+        expect(consoleSpy).toHaveBeenCalledWith('Failed to start recording', expect.any(Error));
+        consoleSpy.mockRestore();
+    });
+
+    it('should handle stop recording/processing error', async () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+        const { getByText } = render(<ChatScreen />);
+        const micBtn = getByText('Mic');
+
+        // Start
+        await act(async () => {
+            fireEvent(micBtn, 'pressIn');
+        });
+
+        // Fail the stop step (e.g. analysis failure)
+        (cloudAIService.generateResponseFromAudio as jest.Mock).mockRejectedValue(new Error('Analysis Failed'));
+
+        const micBtnActive = getByText('Stop');
+        await act(async () => {
+            fireEvent(micBtnActive, 'pressOut');
+        });
+
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalledWith('Recording/Analysis failed', expect.any(Error));
+        });
+        consoleSpy.mockRestore();
+    });
+
+    it('should cleanup recording on unmount', async () => {
+        const { getByText, unmount } = render(<ChatScreen />);
+        const micBtn = getByText('Mic');
+
+        await act(async () => {
+            fireEvent(micBtn, 'pressIn');
+        });
+
+        unmount();
+
+        expect(mockRecording.stopAndUnloadAsync).toHaveBeenCalled();
     });
 });

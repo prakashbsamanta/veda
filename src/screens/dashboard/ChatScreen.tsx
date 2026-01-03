@@ -33,6 +33,7 @@ export default function ChatScreen() {
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+    const recordingRef = useRef<Audio.Recording | null>(null);
     const { user } = useAuthStore();
 
     // Initial greeting
@@ -48,8 +49,8 @@ export default function ChatScreen() {
             ]);
         }
         return () => {
-            if (recording) {
-                recording.stopAndUnloadAsync();
+            if (recordingRef.current) {
+                recordingRef.current.stopAndUnloadAsync();
             }
         };
     }, []);
@@ -72,6 +73,7 @@ export default function ChatScreen() {
             );
 
             setRecording(recording);
+            recordingRef.current = recording;
             setIsRecording(true);
         } catch (err) {
             console.error('Failed to start recording', err);
@@ -89,6 +91,7 @@ export default function ChatScreen() {
             await recording.stopAndUnloadAsync();
             const uri = recording.getURI();
             setRecording(null);
+            recordingRef.current = null;
 
             if (!uri) return;
 
