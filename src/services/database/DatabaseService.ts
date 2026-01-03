@@ -5,6 +5,7 @@ import { logger } from '../../utils/Logger';
 export class DatabaseService {
     private static instance: DatabaseService;
     private db: SQLite.SQLiteDatabase | null = null;
+    private initPromise: Promise<void> | null = null;
 
     private constructor() { }
 
@@ -18,17 +19,26 @@ export class DatabaseService {
     public async init(): Promise<void> {
         if (this.db) return;
 
-        try {
-            this.db = await SQLite.openDatabaseAsync('veda.db');
-            await this.initSchema();
-
-
-            // ... (inside catch blocks)
-            logger.info('Database initialized successfully');
-        } catch (error) {
-            logger.error('Failed to initialize database:', error);
-            throw error;
+        // Prevent race conditions during initialization
+        if (this.initPromise) {
+            return this.initPromise;
         }
+
+        this.initPromise = (async () => {
+            try {
+                this.db = SQLite.openDatabaseSync('veda.db');
+                await this.initSchema();
+                logger.info('Database initialized successfully');
+            } catch (error) {
+                logger.error('Failed to initialize database:', error);
+                this.db = null; // Ensure we don't end up with a half-baked state
+                throw error;
+            } finally {
+                this.initPromise = null;
+            }
+        })();
+
+        return this.initPromise;
     }
 
     private async initSchema(): Promise<void> {
@@ -68,7 +78,5 @@ export class DatabaseService {
         return await this.db!.getFirstAsync(query, params);
     }
 }
-
-
 
 export const dbService = DatabaseService.getInstance();

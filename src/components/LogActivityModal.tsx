@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch } from 'react-native';
-import { X, Check, FileText, CheckSquare, DollarSign, Plus, AlarmClock } from 'lucide-react-native';
-import { ActivityService, activityService } from '../services/database/ActivityService';
+import { X, Check, FileText, CheckSquare, DollarSign, Plus, AlarmClock, Trash } from 'lucide-react-native';
+import { ActivityService, activityService, ActivityItem } from '../services/database/ActivityService';
 import { useAuthStore } from '../store/authStore';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { notificationService } from '../services/notifications/NotificationService';
+import CustomAlertModal from './common/CustomAlertModal';
+import CustomDatePickerModal from './common/CustomDatePickerModal';
+import RecurrencePicker, { RecurrenceRule } from './common/RecurrencePicker';
+import { Repeat } from 'lucide-react-native';
 
 type ActivityType = 'note' | 'task' | 'expense';
 
@@ -12,9 +15,10 @@ interface Props {
     visible: boolean;
     onClose: () => void;
     onSave: () => void; // Callback to refresh parent list
+    initialActivity?: ActivityItem | null;
 }
 
-export default function LogActivityModal({ visible, onClose, onSave }: Props) {
+export default function LogActivityModal({ visible, onClose, onSave, initialActivity }: Props) {
     const { user } = useAuthStore();
     const [type, setType] = useState<ActivityType>('note');
     const [title, setTitle] = useState('');
@@ -25,8 +29,57 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
     // Reminder State
     const [hasReminder, setHasReminder] = useState(false);
     const [reminderDate, setReminderDate] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showTimePicker, setShowTimePicker] = useState(false);
+
+    // Custom Date Picker State
+    const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+    // Recurrence State
+    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | undefined>(undefined);
+    const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
+
+    // Custom Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message?: string;
+        buttons?: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }[];
+    }>({ visible: false, title: '' });
+
+    const showAlert = (title: string, message?: string, buttons?: any[]) => {
+        setAlertConfig({ visible: true, title, message, buttons });
+    };
+
+    const hideAlert = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
+
+    // Initialize state when modal opens or initialActivity changes
+    React.useEffect(() => {
+        if (visible) {
+            if (initialActivity) {
+                setType(initialActivity.type);
+                setTitle(initialActivity.title);
+                setDescription(initialActivity.description || '');
+                setAmount(initialActivity.amount ? initialActivity.amount.toString() : '');
+                // Reset reminder state for existing tasks as we don't store reminder specific data in ActivityItem yet
+                // For a real app, we'd fetch reminder status
+                setHasReminder(false); // For now, reset reminders on edit
+
+                // Parse recurrence if exists
+                if (initialActivity.recurrence_rule) {
+                    try {
+                        setRecurrenceRule(JSON.parse(initialActivity.recurrence_rule));
+                    } catch (e) {
+                        setRecurrenceRule(undefined);
+                    }
+                } else {
+                    setRecurrenceRule(undefined);
+                }
+            } else {
+                resetForm();
+            }
+        }
+    }, [visible, initialActivity]);
 
     const resetForm = () => {
         setTitle('');
@@ -35,15 +88,17 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
         setType('note');
         setHasReminder(false);
         setReminderDate(new Date());
+        setDatePickerVisible(false);
+        setRecurrenceRule(undefined);
     };
 
     const handleSave = async () => {
         if (!title.trim()) {
-            Alert.alert('Error', 'Please enter a title');
+            showAlert('Error', 'Please enter a title');
             return;
         }
         if (type === 'expense' && !amount) {
-            Alert.alert('Error', 'Please enter an amount');
+            showAlert('Error', 'Please enter an amount');
             return;
         }
 
@@ -52,13 +107,26 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
         setLoading(true);
         try {
             // Save to Database
-            await activityService.createActivity(user.uid, {
-                type,
-                title: title.trim(),
-                description: description.trim(),
-                amount: type === 'expense' ? parseFloat(amount) : undefined,
-                currency: 'INR'
-            });
+            if (initialActivity) {
+                await activityService.updateActivity(initialActivity.id, {
+                    type,
+                    title: title.trim(),
+                    description: description.trim(),
+                    amount: type === 'expense' && amount ? parseFloat(amount) : undefined,
+                    currency: 'INR',
+                    // Don't update category for now as UI doesn't allow changing it easily
+                    recurrence_rule: recurrenceRule ? JSON.stringify(recurrenceRule) : undefined
+                });
+            } else {
+                await activityService.createActivity(user.uid, {
+                    type,
+                    title: title.trim(),
+                    description: description.trim(),
+                    amount: type === 'expense' ? parseFloat(amount) : undefined,
+                    currency: 'INR',
+                    recurrence_rule: recurrenceRule ? JSON.stringify(recurrenceRule) : undefined
+                });
+            }
 
             // Schedule Notification if needed
             if (type === 'task' && hasReminder) {
@@ -69,7 +137,7 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
                         reminderDate
                     );
                 } else {
-                    Alert.alert("Warning", "Reminder time is in the past, no notification set.");
+                    showAlert("Warning", "Reminder time is in the past, no notification set.");
                 }
             }
 
@@ -77,33 +145,40 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
             resetForm();
             onClose();
         } catch (error) {
-            Alert.alert('Error', 'Failed to save activity');
+            showAlert('Error', 'Failed to save activity');
         } finally {
             setLoading(false);
         }
     };
 
-    const onChangeDate = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false);
-        if (selectedDate) {
-            const currentDate = selectedDate;
-            // Keep the time from the previous state, only update date
-            const newDate = new Date(reminderDate);
-            newDate.setFullYear(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-            setReminderDate(newDate);
-            setShowTimePicker(true); // Open time picker next
-        }
-    };
+    const handleDelete = async () => {
+        if (!initialActivity) return;
 
-    const onChangeTime = (event: any, selectedDate?: Date) => {
-        setShowTimePicker(false);
-        if (selectedDate) {
-            const currentDate = selectedDate;
-            // Combine with date
-            const newDate = new Date(reminderDate);
-            newDate.setHours(currentDate.getHours(), currentDate.getMinutes());
-            setReminderDate(newDate);
-        }
+        showAlert(
+            "Delete Activity",
+            "Are you sure you want to delete this activity?",
+            [
+                { text: "Cancel", style: "cancel", onPress: hideAlert },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            await activityService.deleteActivity(initialActivity.id);
+                            onSave();
+                            resetForm();
+                            onClose();
+                            hideAlert();
+                        } catch (error) {
+                            showAlert('Error', 'Failed to delete activity', [{ text: 'OK', onPress: hideAlert }]);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -119,7 +194,7 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
             >
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Log New Activity</Text>
+                        <Text style={styles.title}>{initialActivity ? 'Edit Activity' : 'Log New Activity'}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                             <X color="#FFF" size={24} />
                         </TouchableOpacity>
@@ -210,34 +285,34 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
                                     </View>
 
                                     {hasReminder && (
-                                        <View>
+                                        <View style={{ gap: 8 }}>
+                                            {/* Date Picker Button with Reminder Status */}
                                             <TouchableOpacity
-                                                style={styles.dateButton}
-                                                onPress={() => setShowDatePicker(true)}
+                                                style={[styles.dateButton, {
+                                                    backgroundColor: recurrenceRule?.frequency !== 'none' && recurrenceRule ? '#E5D0AC' : '#2C2C2E'
+                                                }]}
+                                                onPress={() => setDatePickerVisible(true)}
                                             >
-                                                <Text style={styles.dateText}>
-                                                    {reminderDate.toLocaleDateString()} at {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                    {recurrenceRule?.frequency !== 'none' && recurrenceRule ? (
+                                                        <Repeat size={16} color="#1C1C1E" />
+                                                    ) : (
+                                                        <AlarmClock size={16} color="#AAAAAA" />
+                                                    )}
+                                                    <Text style={[
+                                                        styles.dateText,
+                                                        recurrenceRule?.frequency !== 'none' && recurrenceRule && { color: '#1C1C1E', fontWeight: 'bold' }
+                                                    ]}>
+                                                        {reminderDate.toLocaleDateString()} at {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </Text>
+                                                </View>
+                                                {recurrenceRule?.frequency !== 'none' && recurrenceRule && (
+                                                    <Text style={{ fontSize: 10, color: '#1C1C1E', marginTop: 2 }}>
+                                                        Repeats {recurrenceRule.frequency}
+                                                    </Text>
+                                                )}
                                             </TouchableOpacity>
                                         </View>
-                                    )}
-
-                                    {showDatePicker && (
-                                        <DateTimePicker
-                                            value={reminderDate}
-                                            mode="date"
-                                            display="default"
-                                            onChange={onChangeDate}
-                                            minimumDate={new Date()}
-                                        />
-                                    )}
-                                    {showTimePicker && (
-                                        <DateTimePicker
-                                            value={reminderDate}
-                                            mode="time"
-                                            display="default"
-                                            onChange={onChangeTime}
-                                        />
                                     )}
                                 </View>
                             )}
@@ -253,13 +328,43 @@ export default function LogActivityModal({ visible, onClose, onSave }: Props) {
                                 ) : (
                                     <>
                                         <Plus color="#1C1C1E" size={24} />
-                                        <Text style={styles.saveButtonText}>Save Entry</Text>
+                                        <Text style={styles.saveButtonText}>{initialActivity ? 'Update Entry' : 'Save Entry'}</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
+
+                            {initialActivity && (
+                                <TouchableOpacity
+                                    style={[styles.deleteButton, loading && styles.disabledButton]}
+                                    onPress={handleDelete}
+                                    disabled={loading}
+                                >
+                                    <Trash color="#FF453A" size={20} />
+                                    <Text style={styles.deleteButtonText}>Delete Activity</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </ScrollView>
                 </View>
+                <CustomAlertModal
+                    visible={alertConfig.visible}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    buttons={alertConfig.buttons}
+                    onClose={hideAlert}
+                />
+                <CustomDatePickerModal
+                    visible={datePickerVisible}
+                    initialDate={reminderDate}
+                    mode="datetime"
+                    minDate={new Date()}
+                    onClose={() => setDatePickerVisible(false)}
+                    onSelect={(date) => {
+                        setReminderDate(date);
+                    }}
+                    recurrenceRule={recurrenceRule}
+                    onRecurrenceChange={setRecurrenceRule}
+                />
             </KeyboardAvoidingView>
         </Modal>
     );
@@ -357,6 +462,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 8,
         gap: 8
+    },
+    deleteButton: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 69, 58, 0.1)',
+        padding: 16,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 0,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 69, 58, 0.3)'
+    },
+    deleteButtonText: {
+        color: '#FF453A',
+        fontWeight: 'bold',
+        fontSize: 16
     },
     disabledButton: {
         opacity: 0.7,

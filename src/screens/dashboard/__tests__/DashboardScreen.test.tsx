@@ -105,16 +105,6 @@ describe('DashboardScreen', () => {
         expect(getByText('LogActivityModal Mock')).toBeTruthy();
     });
 
-    it('should handle logout', async () => {
-        const { getByText } = renderWithNav(<DashboardScreen {...props} />);
-
-        fireEvent.press(getByText('LogOut'));
-
-        await waitFor(() => {
-            expect(authService.signOut).toHaveBeenCalled();
-        });
-    });
-
     it('should greet Good Morning before 12 PM', () => {
         jest.useFakeTimers({ now: new Date('2023-01-01T09:00:00') });
 
@@ -140,21 +130,6 @@ describe('DashboardScreen', () => {
         expect(getByText('Good Evening,')).toBeTruthy();
 
         jest.useRealTimers();
-    });
-
-    it('should handle logout error', async () => {
-        // Mock console.error to suppress expected error output in test log
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
-        (authService.signOut as jest.Mock).mockRejectedValue(new Error('Logout Failed'));
-        const alertSpy = jest.spyOn(require('react-native').Alert, 'alert');
-
-        const { getByText } = renderWithNav(<DashboardScreen {...props} />);
-        fireEvent.press(getByText('LogOut'));
-
-        await waitFor(() => {
-            expect(alertSpy).toHaveBeenCalledWith("Error", "Failed to log out");
-        });
-        consoleSpy.mockRestore();
     });
 
     it('should render various activity types correctly', async () => {

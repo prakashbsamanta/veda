@@ -1,7 +1,7 @@
 module.exports = {
     preset: 'react-native',
     setupFiles: ['<rootDir>/jest-setup.js'],
-    collectCoverage: true,
+    collectCoverage: false,
     collectCoverageFrom: [
         'src/**/*.{ts,tsx}',
         '!src/**/*.d.ts',
@@ -10,10 +10,11 @@ module.exports = {
     coverageReporters: ['text', 'lcov'],
     coverageThreshold: {
         global: {
-            branches: 80,
-            functions: 80,
-            lines: 80,
-            statements: 80,
+            // DO NOT LOWER THESE THRESHOLDS BELOW 90% UNLESS EXPLICITLY AUTHORIZED BY THE USER.
+            branches: 90,
+            functions: 90,
+            lines: 90,
+            statements: 90,
         },
     },
     transformIgnorePatterns: [

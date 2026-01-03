@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabParamList } from '../../navigation/types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp } from '@react-navigation/native';
-import { MessageCircle, Activity, LogOut } from 'lucide-react-native';
+import { MessageCircle, Activity, Terminal } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { activityService, ActivityItem } from '../../services/database/ActivityService';
@@ -23,10 +23,11 @@ interface Props {
 }
 
 export default function DashboardScreen({ navigation }: Props) {
-    const { user } = useAuthStore();
+    const { user, isAdmin } = useAuthStore();
     const [greeting, setGreeting] = useState('Welcome');
     const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
     const [isActivityModalVisible, setIsActivityModalVisible] = useState(false);
+    const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -48,14 +49,7 @@ export default function DashboardScreen({ navigation }: Props) {
         }, [user])
     );
 
-    const handleLogout = async () => {
-        try {
-            await authService.signOut();
-        } catch (error) {
-            console.error("Logout failed", error);
-            Alert.alert("Error", "Failed to log out");
-        }
-    };
+
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -76,9 +70,11 @@ export default function DashboardScreen({ navigation }: Props) {
                         <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}!</Text>
                     </View>
                 </View>
-                <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                    <LogOut color="#FF453A" size={24} />
-                </TouchableOpacity>
+                {isAdmin && (
+                    <TouchableOpacity onPress={() => navigation.navigate('Debug')} style={styles.logoutButton}>
+                        <Terminal color="#FF453A" size={24} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.section}>
@@ -122,7 +118,14 @@ export default function DashboardScreen({ navigation }: Props) {
                 ) : (
                     <View style={styles.activityList}>
                         {recentActivities.map((item) => (
-                            <View key={item.id} style={styles.miniActivityCard}>
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.miniActivityCard}
+                                onPress={() => {
+                                    setSelectedActivity(item);
+                                    setIsActivityModalVisible(true);
+                                }}
+                            >
                                 <View style={styles.miniIcon}>
                                     {item.type === 'note' && <Activity color="#E5D0AC" size={16} />}
                                     {item.type === 'task' && <Activity color="#4A90E2" size={16} />}
@@ -137,7 +140,7 @@ export default function DashboardScreen({ navigation }: Props) {
                                 {item.type === 'expense' && (
                                     <Text style={styles.miniAmount}>-{item.currency} {item.amount}</Text>
                                 )}
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 )}
@@ -145,8 +148,12 @@ export default function DashboardScreen({ navigation }: Props) {
 
             <LogActivityModal
                 visible={isActivityModalVisible}
-                onClose={() => setIsActivityModalVisible(false)}
+                onClose={() => {
+                    setIsActivityModalVisible(false);
+                    setSelectedActivity(null);
+                }}
                 onSave={fetchActivities}
+                initialActivity={selectedActivity}
             />
         </ScrollView>
     );

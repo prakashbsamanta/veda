@@ -1,0 +1,224 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { Calendar, Clock, X, Check, Repeat } from 'lucide-react-native';
+import CalendarView from './CalendarView';
+import TimePickerView from './TimePickerView';
+import RecurrenceOptions, { RecurrenceRule } from './RecurrencePicker';
+
+interface CustomDatePickerModalProps {
+    visible: boolean;
+    initialDate?: Date;
+    onClose: () => void;
+    onSelect: (date: Date) => void;
+    mode?: 'date' | 'time' | 'datetime';
+    minDate?: Date;
+    recurrenceRule?: RecurrenceRule;
+    onRecurrenceChange?: (rule: RecurrenceRule) => void;
+}
+
+export default function CustomDatePickerModal({
+    visible,
+    initialDate,
+    onClose,
+    onSelect,
+    mode = 'datetime', // Default to both
+    minDate,
+    recurrenceRule,
+    onRecurrenceChange
+}: CustomDatePickerModalProps) {
+    const [selectedDate, setSelectedDate] = useState(initialDate || new Date());
+    const [currentTab, setCurrentTab] = useState<'date' | 'time' | 'repeat'>('date');
+
+    useEffect(() => {
+        if (visible) {
+            setSelectedDate(initialDate || new Date());
+            // If mode is only time, default to time tab. Otherwise date.
+            if (mode === 'time') setCurrentTab('time');
+            else setCurrentTab('date');
+        }
+    }, [visible, initialDate, mode]);
+
+    const handleConfirm = () => {
+        onSelect(selectedDate);
+        onClose();
+    };
+
+    const formatDatePreview = (date: Date) => {
+        return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    };
+
+    const formatTimePreview = (date: Date) => {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.overlay}>
+                <View style={styles.container}>
+                    {/* Header with Tabs */}
+                    <View style={styles.header}>
+                        <View style={styles.tabs}>
+                            {(mode === 'datetime' || mode === 'date') && (
+                                <TouchableOpacity
+                                    style={[styles.tab, currentTab === 'date' && styles.activeTab]}
+                                    onPress={() => setCurrentTab('date')}
+                                >
+                                    <Calendar color={currentTab === 'date' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    <Text style={[styles.tabText, currentTab === 'date' && styles.activeTabText]}>
+                                        {formatDatePreview(selectedDate)}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {(mode === 'datetime' || mode === 'time') && (
+                                <TouchableOpacity
+                                    style={[styles.tab, currentTab === 'time' && styles.activeTab]}
+                                    onPress={() => setCurrentTab('time')}
+                                >
+                                    <Clock color={currentTab === 'time' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    <Text style={[styles.tabText, currentTab === 'time' && styles.activeTabText]}>
+                                        {formatTimePreview(selectedDate)}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {/* Repeat Tab - Only show if callback provided */}
+                            {onRecurrenceChange && (
+                                <TouchableOpacity
+                                    style={[styles.tab, currentTab === 'repeat' && styles.activeTab]}
+                                    onPress={() => setCurrentTab('repeat')}
+                                >
+                                    <Repeat color={currentTab === 'repeat' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    {recurrenceRule && recurrenceRule.frequency !== 'none' && (
+                                        <View style={styles.badge} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                            <X color="#A1A1AA" size={24} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Content Body */}
+                    <View style={styles.content}>
+                        {currentTab === 'date' ? (
+                            <CalendarView
+                                selectedDate={selectedDate}
+                                onDateSelect={setSelectedDate}
+                                minDate={minDate}
+                            />
+                        ) : currentTab === 'time' ? (
+                            <TimePickerView
+                                selectedDate={selectedDate}
+                                onTimeChange={setSelectedDate}
+                            />
+                        ) : (
+                            <RecurrenceOptions
+                                selectedRule={recurrenceRule}
+                                onSelect={(rule) => onRecurrenceChange?.(rule)}
+                            />
+                        )}
+                    </View>
+
+                    {/* Footer Actions */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+                            <Check color="#1C1C1E" size={20} />
+                            <Text style={styles.confirmText}>Confirm</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}
+
+const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    container: {
+        backgroundColor: '#1C1C1E',
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2C2C2E',
+        justifyContent: 'space-between',
+    },
+    tabs: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    tab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: '#2C2C2E',
+        gap: 8,
+    },
+    activeTab: {
+        backgroundColor: '#E5D0AC',
+    },
+    tabText: {
+        color: '#E5D0AC',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    activeTabText: {
+        color: '#1C1C1E',
+    },
+    badge: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#1C1C1E', // Dark dot on Gold active tab
+        position: 'absolute',
+        top: 6,
+        right: 6,
+    },
+    closeBtn: {
+        padding: 4,
+    },
+    content: {
+        padding: 20,
+        height: 380, // Fixed height for consistency
+    },
+    footer: {
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#2C2C2E',
+        alignItems: 'flex-end',
+    },
+    confirmButton: {
+        flexDirection: 'row',
+        backgroundColor: '#E5D0AC',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        gap: 8,
+    },
+    confirmText: {
+        color: '#1C1C1E',
+        fontWeight: 'bold',
+        fontSize: 16,
+    }
+});
