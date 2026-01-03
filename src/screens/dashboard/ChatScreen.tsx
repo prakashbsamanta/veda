@@ -8,10 +8,14 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator
+    ActivityIndicator,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send } from 'lucide-react-native';
+import { Send, Mic, Square } from 'lucide-react-native';
+import { Audio } from 'expo-av';
+import * as Speech from 'expo-speech';
+import * as FileSystem from 'expo-file-system';
 import { cloudAIService } from '../../services/ai/CloudAIService';
 import { useAuthStore } from '../../store/authStore';
 
@@ -26,6 +30,8 @@ export default function ChatScreen() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [recording, setRecording] = useState<Audio.Recording | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const { user } = useAuthStore();
 
@@ -41,7 +47,81 @@ export default function ChatScreen() {
                 }
             ]);
         }
+        return () => {
+            if (recording) {
+                recording.stopAndUnloadAsync();
+            }
+        };
     }, []);
+
+    const startRecording = async () => {
+        try {
+            const permission = await Audio.requestPermissionsAsync();
+            if (permission.status !== 'granted') {
+                Alert.alert('Permission needed', 'Please grant microphone permission to use voice chat.');
+                return;
+            }
+
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true,
+            });
+
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+
+            setRecording(recording);
+            setIsRecording(true);
+        } catch (err) {
+            console.error('Failed to start recording', err);
+            Alert.alert('Error', 'Failed to start recording.');
+        }
+    };
+
+    const stopRecording = async () => {
+        if (!recording) return;
+
+        setIsRecording(false);
+        setLoading(true);
+
+        try {
+            await recording.stopAndUnloadAsync();
+            const uri = recording.getURI();
+            setRecording(null);
+
+            if (!uri) return;
+
+            // Convert to base64
+            const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                encoding: 'base64',
+            });
+
+            // Optimistic update for UI (optional, maybe just show "Processing audio...")
+
+            const response = await cloudAIService.generateResponseFromAudio(base64Audio);
+
+            // Add AI response directly
+            const aiMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: response.text,
+                sender: 'ai',
+                timestamp: Date.now()
+            };
+
+            setMessages(prev => [...prev, aiMsg]);
+
+            // Speak response
+            Speech.speak(response.text);
+
+        } catch (error) {
+            console.error('Recording/Analysis failed', error);
+            Alert.alert('Error', 'Failed to process audio.');
+        } finally {
+            setLoading(false);
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        }
+    };
 
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -71,6 +151,12 @@ export default function ChatScreen() {
             };
 
             setMessages(prev => [...prev, aiMsg]);
+
+            // Auto-speak response if desired, or maybe valid only for voice mode?
+            // For now let's only speak if it came from voice, or maybe just leave it silent for text input.
+            // If user wants TTS for text input, we can add a toggle. 
+            // Let's keep it silent for text input for now to avoid annoyance.
+
         } catch (error) {
             console.error("Chat Error:", error);
             const errorMsg: Message = {
@@ -121,13 +207,26 @@ export default function ChatScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={styles.inputContainer}>
+                    <TouchableOpacity
+                        style={[styles.micButton, isRecording && styles.micButtonActive]}
+                        onPressIn={startRecording}
+                        onPressOut={stopRecording}
+                        disabled={loading}
+                    >
+                        {isRecording ? (
+                            <Square color="#1C1C1E" size={24} fill="#1C1C1E" />
+                        ) : (
+                            <Mic color={loading ? "#666" : "#E5D0AC"} size={24} />
+                        )}
+                    </TouchableOpacity>
+
                     <TextInput
                         style={styles.input}
-                        placeholder="Ask anything..."
+                        placeholder={isRecording ? "Listening..." : "Ask anything..."}
                         placeholderTextColor="#666"
                         value={inputText}
                         onChangeText={setInputText}
-                        editable={!loading}
+                        editable={!loading && !isRecording}
                         onSubmitEditing={handleSend}
                     />
                     <TouchableOpacity
@@ -224,9 +323,14 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
         opacity: 0.5,
     },
-    sendButtonText: {
-        color: '#1C1C1E',
-        fontWeight: 'bold',
-        fontSize: 12,
+    micButton: {
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 22,
     },
+    micButtonActive: {
+        backgroundColor: '#FF453A',
+    }
 });

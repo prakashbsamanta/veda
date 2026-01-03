@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Calendar, Clock, X, Check, Repeat } from 'lucide-react-native';
@@ -60,6 +61,8 @@ export default function CustomDatePickerModal({
         >
             <View style={styles.overlay}>
                 <View style={styles.container}>
+                    <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+
                     {/* Header with Tabs */}
                     <View style={styles.header}>
                         <View style={styles.tabs}>
@@ -147,11 +150,11 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     container: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: 'rgba(28, 28, 30, 0.8)', // Frosted
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#2C2C2E',
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     header: {
         flexDirection: 'row',

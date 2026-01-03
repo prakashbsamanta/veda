@@ -6,6 +6,8 @@ import { useAuthStore } from '../store/authStore';
 import { notificationService } from '../services/notifications/NotificationService';
 import CustomAlertModal from './common/CustomAlertModal';
 import CustomDatePickerModal from './common/CustomDatePickerModal';
+import { LocalCategorizer } from '../services/ai/LocalCategorizer';
+import { BlurView } from 'expo-blur';
 import RecurrencePicker, { RecurrenceRule } from './common/RecurrencePicker';
 import { Repeat } from 'lucide-react-native';
 
@@ -193,38 +195,41 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                 style={styles.modalOverlay}
             >
                 <View style={styles.modalContent}>
+                    <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+
                     <View style={styles.header}>
-                        <Text style={styles.title}>{initialActivity ? 'Edit Activity' : 'Log New Activity'}</Text>
+                        <Text style={styles.title}>{initialActivity ? 'Edit Activity' : 'Log Activity'}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                             <X color="#FFF" size={24} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        {/* Type Selector */}
-                        <View style={styles.typeSelector}>
+                        {/* Auto-detected Type Indicator */}
+                        <View style={styles.typeIndicatorContainer}>
+                            <Text style={styles.typeLabel}>Categorized as:</Text>
                             <TouchableOpacity
-                                style={[styles.typeButton, type === 'note' && styles.typeButtonActive]}
-                                onPress={() => setType('note')}
+                                style={[styles.typeBadge, {
+                                    backgroundColor: type === 'expense' ? 'rgba(255, 69, 58, 0.2)' :
+                                        type === 'task' ? 'rgba(74, 144, 226, 0.2)' : 'rgba(229, 208, 172, 0.2)',
+                                    borderColor: type === 'expense' ? '#FF453A' :
+                                        type === 'task' ? '#4A90E2' : '#E5D0AC'
+                                }]}
+                                onPress={() => {
+                                    // Cycle types on click or show alert? Cycling is easy.
+                                    const next = type === 'note' ? 'task' : type === 'task' ? 'expense' : 'note';
+                                    setType(next);
+                                }}
                             >
-                                <FileText color={type === 'note' ? '#1C1C1E' : '#E5D0AC'} size={20} />
-                                <Text style={[styles.typeText, type === 'note' && styles.typeTextActive]}>Note</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.typeButton, type === 'task' && styles.typeButtonActive]}
-                                onPress={() => setType('task')}
-                            >
-                                <CheckSquare color={type === 'task' ? '#1C1C1E' : '#E5D0AC'} size={20} />
-                                <Text style={[styles.typeText, type === 'task' && styles.typeTextActive]}>Task</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
-                                onPress={() => setType('expense')}
-                            >
-                                <DollarSign color={type === 'expense' ? '#1C1C1E' : '#E5D0AC'} size={20} />
-                                <Text style={[styles.typeText, type === 'expense' && styles.typeTextActive]}>Expense</Text>
+                                {type === 'note' && <FileText size={14} color="#E5D0AC" />}
+                                {type === 'task' && <CheckSquare size={14} color="#4A90E2" />}
+                                {type === 'expense' && <DollarSign size={14} color="#FF453A" />}
+                                <Text style={[styles.typeBadgeText, {
+                                    color: type === 'expense' ? '#FF453A' :
+                                        type === 'task' ? '#4A90E2' : '#E5D0AC'
+                                }]}>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
@@ -237,29 +242,23 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                     placeholder="What's this about?"
                                     placeholderTextColor="#666"
                                     value={title}
-                                    onChangeText={setTitle}
+                                    onChangeText={(text) => {
+                                        setTitle(text);
+                                        // Simple heuristic: If type is 'note' (default), try to guess.
+                                        // Don't override if user already set specific fields like Amount/Reminder
+                                        if (!amount && !hasReminder && !initialActivity) {
+                                            const suggested = LocalCategorizer.suggestType(text);
+                                            if (suggested !== type) setType(suggested);
+                                        }
+                                    }}
                                 />
                             </View>
-
-                            {type === 'expense' && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Amount (INR)</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="0.00"
-                                        placeholderTextColor="#666"
-                                        keyboardType="numeric"
-                                        value={amount}
-                                        onChangeText={setAmount}
-                                    />
-                                </View>
-                            )}
 
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Description</Text>
                                 <TextInput
                                     style={[styles.input, styles.textArea]}
-                                    placeholder="Add details (optional)"
+                                    placeholder="Add details (categories, tags, etc.)"
                                     placeholderTextColor="#666"
                                     multiline
                                     value={description}
@@ -267,55 +266,85 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                 />
                             </View>
 
-                            {/* Reminder Section (Only for Tasks) */}
-                            {type === 'task' && (
-                                <View style={styles.reminderSection}>
-                                    <View style={styles.reminderHeader}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                            <AlarmClock color="#E5D0AC" size={20} />
-                                            <Text style={styles.label}>Set Reminder</Text>
-                                        </View>
-                                        <Switch
-                                            testID="reminder-switch"
-                                            value={hasReminder}
-                                            onValueChange={setHasReminder}
-                                            trackColor={{ false: "#2C2C2E", true: "#E5D0AC" }}
-                                            thumbColor={hasReminder ? "#1C1C1E" : "#f4f3f4"}
-                                        />
-                                    </View>
+                            {/* Unified Options Section */}
+                            <Text style={styles.sectionLabel}>Details</Text>
 
-                                    {hasReminder && (
-                                        <View style={{ gap: 8 }}>
-                                            {/* Date Picker Button with Reminder Status */}
-                                            <TouchableOpacity
-                                                style={[styles.dateButton, {
-                                                    backgroundColor: recurrenceRule?.frequency !== 'none' && recurrenceRule ? '#E5D0AC' : '#2C2C2E'
-                                                }]}
-                                                onPress={() => setDatePickerVisible(true)}
-                                            >
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                    {recurrenceRule?.frequency !== 'none' && recurrenceRule ? (
-                                                        <Repeat size={16} color="#1C1C1E" />
-                                                    ) : (
-                                                        <AlarmClock size={16} color="#AAAAAA" />
-                                                    )}
-                                                    <Text style={[
-                                                        styles.dateText,
-                                                        recurrenceRule?.frequency !== 'none' && recurrenceRule && { color: '#1C1C1E', fontWeight: 'bold' }
-                                                    ]}>
-                                                        {reminderDate.toLocaleDateString()} at {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </Text>
-                                                </View>
-                                                {recurrenceRule?.frequency !== 'none' && recurrenceRule && (
-                                                    <Text style={{ fontSize: 10, color: '#1C1C1E', marginTop: 2 }}>
-                                                        Repeats {recurrenceRule.frequency}
-                                                    </Text>
-                                                )}
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
+                            {/* Amount Field - Always visible but optional */}
+                            <View style={styles.inputGroup}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                    <DollarSign size={16} color="#A1A1AA" />
+                                    <Text style={styles.label}>Amount (INR)</Text>
                                 </View>
-                            )}
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="0.00"
+                                    placeholderTextColor="#666"
+                                    keyboardType="numeric"
+                                    value={amount}
+                                    onChangeText={(val) => {
+                                        setAmount(val);
+                                        if (val && parseFloat(val) > 0) {
+                                            setType('expense');
+                                        } else if (!val && !hasReminder) {
+                                            // Revert to note if cleared? detailed logic might be annoying.
+                                            // Let's stick to: Input -> Sets Type. Clearing doesn't necessarily unset it.
+                                        }
+                                    }}
+                                />
+                            </View>
+
+                            {/* Reminder Section - Always visible */}
+                            <View style={styles.reminderSection}>
+                                <View style={styles.reminderHeader}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <AlarmClock color="#E5D0AC" size={20} />
+                                        <Text style={styles.label}>Set Reminder</Text>
+                                    </View>
+                                    <Switch
+                                        testID="reminder-switch"
+                                        value={hasReminder}
+                                        onValueChange={(val) => {
+                                            setHasReminder(val);
+                                            if (val) setType('task');
+                                            // If turned off, and no amount, maybe revert to note? 
+                                            // Keep it simple. specific action -> specific type.
+                                        }}
+                                        trackColor={{ false: "#2C2C2E", true: "#E5D0AC" }}
+                                        thumbColor={hasReminder ? "#1C1C1E" : "#f4f3f4"}
+                                    />
+                                </View>
+
+                                {hasReminder && (
+                                    <View style={{ gap: 8 }}>
+                                        <TouchableOpacity
+                                            testID="date-picker-button"
+                                            style={[styles.dateButton, {
+                                                backgroundColor: recurrenceRule?.frequency !== 'none' && recurrenceRule ? '#E5D0AC' : '#2C2C2E'
+                                            }]}
+                                            onPress={() => setDatePickerVisible(true)}
+                                        >
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                {recurrenceRule?.frequency !== 'none' && recurrenceRule ? (
+                                                    <Repeat size={16} color="#1C1C1E" />
+                                                ) : (
+                                                    <AlarmClock size={16} color="#AAAAAA" />
+                                                )}
+                                                <Text style={[
+                                                    styles.dateText,
+                                                    recurrenceRule?.frequency !== 'none' && recurrenceRule && { color: '#1C1C1E', fontWeight: 'bold' }
+                                                ]}>
+                                                    {reminderDate.toLocaleDateString()} at {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </Text>
+                                            </View>
+                                            {recurrenceRule?.frequency !== 'none' && recurrenceRule && (
+                                                <Text style={{ fontSize: 10, color: '#1C1C1E', marginTop: 2 }}>
+                                                    Repeats {recurrenceRule.frequency}
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
 
 
                             <TouchableOpacity
@@ -377,13 +406,14 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: 'rgba(28, 28, 30, 0.7)', // Semi-transparent for blur fallback or tint
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         padding: 24,
         maxHeight: '80%',
         borderTopWidth: 1,
-        borderTopColor: '#2C2C2E',
+        borderTopColor: 'rgba(255,255,255,0.1)',
+        overflow: 'hidden', // Need this for BlurView to respect border radius
     },
     header: {
         flexDirection: 'row',
@@ -399,7 +429,37 @@ const styles = StyleSheet.create({
     closeButton: {
         padding: 4,
     },
-    typeSelector: {
+    typeIndicatorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        gap: 12
+    },
+    typeLabel: {
+        color: '#666',
+        fontSize: 14,
+    },
+    typeBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        borderWidth: 1,
+        gap: 6
+    },
+    typeBadgeText: {
+        fontWeight: '600',
+        fontSize: 13
+    },
+    sectionLabel: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 8,
+        marginBottom: 4
+    },
+    typeSelector: { // Keeping these for now just in case, but they are unused in new layout
         flexDirection: 'row',
         gap: 10,
         marginBottom: 24

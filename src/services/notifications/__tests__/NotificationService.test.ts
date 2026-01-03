@@ -106,7 +106,7 @@ describe('NotificationService', () => {
         service = NotificationService.getInstance();
         await service.registerForPushNotificationsAsync();
 
-        expect(spy).toHaveBeenCalledWith('Error requesting notification permissions:', expect.any(Error));
+        expect(spy).toHaveBeenCalledWith('Error in registerForPushNotificationsAsync:', expect.any(Error));
         spy.mockRestore();
     });
 

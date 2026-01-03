@@ -1,22 +1,10 @@
+import { BlurView } from 'expo-blur';
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
 
-interface AlertButton {
-    text: string;
-    style?: 'default' | 'cancel' | 'destructive';
-    onPress?: () => void;
-}
-
-interface Props {
-    visible: boolean;
-    title: string;
-    message?: string;
-    buttons?: AlertButton[];
-    onClose?: () => void; // Optional fallback if no buttons provided or background tap
-}
+// ... (interfaces)
 
 export default function CustomAlertModal({ visible, title, message, buttons = [], onClose }: Props) {
-    // If no buttons are provided, show a default "OK" button
     const actionButtons = buttons.length > 0 ? buttons : [{ text: 'OK', style: 'default', onPress: onClose }];
 
     return (
@@ -28,6 +16,7 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
         >
             <View style={styles.overlay}>
                 <View style={styles.alertContainer}>
+                    <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
                     <Text style={styles.title}>{title}</Text>
                     {message ? <Text style={styles.message}>{message}</Text> : null}
 
@@ -37,7 +26,6 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
                                 key={index}
                                 style={[
                                     styles.button,
-                                    // Add margin for multiple buttons if needed, or flex
                                 ]}
                                 onPress={() => {
                                     if (btn.onPress) btn.onPress();
@@ -63,20 +51,21 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly lighter overlay to show off blur? standard is ok.
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
     alertContainer: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: 'rgba(28, 28, 30, 0.75)', // Glassy background
         borderRadius: 16,
         padding: 24,
         width: '100%',
         maxWidth: 340,
-        elevation: 5,
+        // elevation: 5, // elevation messes with overflow sometimes on android with blur
         borderWidth: 1,
-        borderColor: '#2C2C2E',
+        borderColor: 'rgba(255,255,255,0.1)',
+        overflow: 'hidden', // Required for BlurView
     },
     title: {
         fontSize: 20,

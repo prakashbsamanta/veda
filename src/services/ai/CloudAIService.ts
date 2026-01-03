@@ -102,6 +102,47 @@ export class CloudAIService {
         throw new Error(`Provider ${provider.name} not implemented yet`);
     }
 
+    // New method for Audio/Multimodal input
+    public async generateResponseFromAudio(audioBase64: string, mimeType: string = "audio/mp4"): Promise<AIResponse> {
+        const provider = this.config.primary;
+
+        // Currently, only Gemini supports native audio input easily via this SDK structure
+        if (provider.name !== 'gemini') {
+            throw new Error("Audio input is currently only supported for Gemini provider.");
+        }
+
+        const apiKey = provider.apiKey;
+        if (!apiKey) {
+            return {
+                text: "No API Key configured for Gemini.",
+                tokensUsed: 0
+            };
+        }
+
+        try {
+            const client = this.getClient(apiKey);
+            const model = client.getGenerativeModel({ model: provider.model || "gemini-1.5-flash" });
+
+            const result = await model.generateContent([
+                {
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: audioBase64
+                    }
+                },
+                { text: "Listen to this audio and respond naturally to the user." }
+            ]);
+
+            const response = await result.response;
+            const text = response.text();
+            
+            return { text, tokensUsed: 0 };
+        } catch (error) {
+            logger.error("Gemini Audio processing failed:", error);
+            throw error;
+        }
+    }
+
     private async callOpenRouter(prompt: string, apiKey: string, modelId: string): Promise<AIResponse> {
         try {
             logger.info(`Calling OpenRouter with model: ${modelId}`);

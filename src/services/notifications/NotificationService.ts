@@ -1,6 +1,6 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform, Alert } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 
 export class NotificationService {
     private static instance: NotificationService;
@@ -17,29 +17,51 @@ export class NotificationService {
     }
 
     private setupNotificationHandler() {
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowAlert: true,
-                shouldPlaySound: true,
-                shouldSetBadge: false,
-                shouldShowBanner: true,
-                shouldShowList: true
-            }),
-        });
+        // Expo Go on Android (SDK 53+) removed expo-notifications native module.
+        // Importing it or calling setNotificationHandler might crash.
+        // We use dynamic require to avoid top-level crash.
+        try {
+            const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+            if (isExpoGo && Platform.OS === 'android') {
+                // Skip handler setup in Expo Go Android
+                return;
+            }
+
+            const Notifications = require('expo-notifications');
+            Notifications.setNotificationHandler({
+                handleNotification: async () => ({
+                    shouldShowAlert: true,
+                    shouldPlaySound: true,
+                    shouldSetBadge: false,
+                    shouldShowBanner: true,
+                    shouldShowList: true
+                }),
+            });
+        } catch (error) {
+            console.log('Failed to set notification handler (likely Expo Go restriction):', error);
+        }
     }
 
     public async registerForPushNotificationsAsync() {
-        if (Platform.OS === 'android') {
-            await Notifications.setNotificationChannelAsync('default', {
-                name: 'default',
-                importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
-                lightColor: '#FF231F7C',
-            });
-        }
+        try {
+            const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+            if (isExpoGo && Platform.OS === 'android') {
+                console.log("Expo Go detected: Skipping remote notification registration to prevent crash.");
+                return;
+            }
 
-        if (Device.isDevice) {
-            try {
+            const Notifications = require('expo-notifications');
+
+            if (Platform.OS === 'android') {
+                await Notifications.setNotificationChannelAsync('default', {
+                    name: 'default',
+                    importance: Notifications.AndroidImportance.MAX,
+                    vibrationPattern: [0, 250, 250, 250],
+                    lightColor: '#FF231F7C',
+                });
+            }
+
+            if (Device.isDevice) {
                 const { status: existingStatus } = await Notifications.getPermissionsAsync();
                 let finalStatus = existingStatus;
 
@@ -52,21 +74,17 @@ export class NotificationService {
                     console.log('Permission not granted for notifications');
                     return;
                 }
-
-                // NOTE: We do NOT call getExpoPushTokenAsync() here because:
-                // 1. We are using local notifications only for now.
-                // 2. Expo Go SDK 53+ has removed support for remote push notifications, causing crashes.
-                // For production with remote push, a development build is required.
-            } catch (error) {
-                console.log('Error requesting notification permissions:', error);
+            } else {
+                console.log('Must use physical device for Notifications');
             }
-        } else {
-            console.log('Must use physical device for Notifications');
+        } catch (error) {
+            console.log('Error in registerForPushNotificationsAsync:', error);
         }
     }
 
     public async scheduleNotification(title: string, body: string, seconds: number) {
         try {
+            const Notifications = require('expo-notifications');
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title,
@@ -87,7 +105,7 @@ export class NotificationService {
 
     public async scheduleNotificationAtDate(title: string, body: string, date: Date) {
         try {
-            // Assuming 'logger' is defined elsewhere or will be added. Using console.log for now.
+            const Notifications = require('expo-notifications');
             console.log(`Scheduling notification for ${date.toISOString()}`);
             await Notifications.scheduleNotificationAsync({
                 content: {
@@ -102,14 +120,18 @@ export class NotificationService {
             });
             return true;
         } catch (error) {
-            // Assuming 'logger' is defined elsewhere or will be added. Using console.error for now.
             console.error('Error scheduling scheduled notification:', error);
             return false;
         }
     }
 
     public async cancelAllNotifications() {
-        await Notifications.cancelAllScheduledNotificationsAsync();
+        try {
+            const Notifications = require('expo-notifications');
+            await Notifications.cancelAllScheduledNotificationsAsync();
+        } catch (error) {
+            console.log("Error cancelling notifications:", error);
+        }
     }
 }
 
