@@ -71,7 +71,7 @@
     "react-native-dotenv": "^3.4.11",
     "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.50.1"
+    "typescript-eslint": "^8.51.0"
   },
   "private": true
 }
