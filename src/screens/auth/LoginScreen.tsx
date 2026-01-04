@@ -11,7 +11,7 @@ import {
     Alert
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../navigation/types';
+import { AuthStackParamList } from '../../types';
 import { authService } from '../../services/auth/AuthService';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;

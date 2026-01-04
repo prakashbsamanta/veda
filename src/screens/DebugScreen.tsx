@@ -4,7 +4,9 @@ import { useDBStore } from '../store/dbStore';
 import { localAIService } from '../services/ai/LocalAIService';
 import { cloudAIService } from '../services/ai/CloudAIService';
 import { GEMINI_API_KEY, PERPLEXITY_API_KEY } from '@env';
-import { LLMConfig } from '../config/llmConfig';
+import { DEFAULT_LLM_CONFIG } from '../config/llmConfig';
+import { LLMConfig } from '../types';
+
 
 export default function DebugScreen() {
     const { initDatabase, isInitialized, error } = useDBStore();

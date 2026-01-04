@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Trash2, FileText, CheckSquare, DollarSign, Plus } from 'lucide-react-native';
 import { useAuthStore } from '../../store/authStore';
-import { activityService, ActivityItem } from '../../services/database/ActivityService';
+import { activityService } from '../../services/database/ActivityService';
+import { ActivityItem } from '../../types';
+
 import { useFocusEffect } from '@react-navigation/native';
 import LogActivityModal from '../../components/LogActivityModal';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
-import { MainTabParamList } from './types';
+import { MainTabParamList } from '../types';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import ActivityScreen from '../screens/dashboard/ActivityScreen';
 import ChatScreen from '../screens/dashboard/ChatScreen';

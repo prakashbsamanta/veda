@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Check, ChevronRight, ChevronLeft } from 'lucide-react-native';
-
-export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
-
-export interface RecurrenceRule {
-    frequency: RecurrenceType;
-    interval?: number;
-}
+import { RecurrenceFrequency, RecurrenceRule } from '../../types';
 
 interface RecurrenceOptionsProps {
     selectedRule?: RecurrenceRule;
     onSelect: (rule: RecurrenceRule) => void;
 }
 
-const OPTIONS: { id: RecurrenceType; label: string }[] = [
+const OPTIONS: { id: RecurrenceFrequency; label: string }[] = [
     { id: 'none', label: 'Does not repeat' },
     { id: 'daily', label: 'Every Day' },
     { id: 'weekly', label: 'Every Week' },
@@ -29,7 +23,7 @@ export default function RecurrenceOptions({ selectedRule, onSelect }: Recurrence
     const [customInterval, setCustomInterval] = useState('1');
     const [customFrequency, setCustomFrequency] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
 
-    const handleSelectOption = (type: RecurrenceType) => {
+    const handleSelectOption = (type: RecurrenceFrequency) => {
         if (type === 'custom') {
             setShowCustomView(true);
         } else {

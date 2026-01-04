@@ -1,11 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { LLMConfig, DEFAULT_LLM_CONFIG } from '../../config/llmConfig';
+import { DEFAULT_LLM_CONFIG } from '../../config/llmConfig';
+import { LLMConfig, AIResponse } from '../../types';
 import { logger } from '../../utils/Logger';
-
-export interface AIResponse {
-    text: string;
-    tokensUsed: number;
-}
 
 export class CloudAIService {
     private static instance: CloudAIService;
@@ -135,7 +131,7 @@ export class CloudAIService {
 
             const response = await result.response;
             const text = response.text();
-            
+
             return { text, tokensUsed: 0 };
         } catch (error) {
             logger.error("Gemini Audio processing failed:", error);

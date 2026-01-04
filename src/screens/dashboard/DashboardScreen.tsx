@@ -3,13 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../services/auth/AuthService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainTabParamList } from '../../navigation/types';
+import { MainTabParamList } from '../../types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { MessageCircle, Activity, Terminal } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { activityService, ActivityItem } from '../../services/database/ActivityService';
+import { activityService } from '../../services/database/ActivityService';
+import { ActivityItem } from '../../types';
+
 import LogActivityModal from '../../components/LogActivityModal';
 
 // Navigation type definition

@@ -2,10 +2,22 @@ import { BlurView } from 'expo-blur';
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
 
-// ... (interfaces)
+interface AlertButton {
+    text: string;
+    style?: 'default' | 'cancel' | 'destructive';
+    onPress?: () => void;
+}
+
+interface Props {
+    visible: boolean;
+    title: string;
+    message?: string;
+    buttons?: AlertButton[];
+    onClose?: () => void;
+}
 
 export default function CustomAlertModal({ visible, title, message, buttons = [], onClose }: Props) {
-    const actionButtons = buttons.length > 0 ? buttons : [{ text: 'OK', style: 'default', onPress: onClose }];
+    const actionButtons: AlertButton[] = buttons.length > 0 ? buttons : [{ text: 'OK', style: 'default', onPress: onClose }];
 
     return (
         <Modal

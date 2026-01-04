@@ -18,13 +18,8 @@ import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
 import { cloudAIService } from '../../services/ai/CloudAIService';
 import { useAuthStore } from '../../store/authStore';
+import { Message } from '../../types/chat';
 
-interface Message {
-    id: string;
-    text: string;
-    sender: 'user' | 'ai';
-    timestamp: number;
-}
 
 export default function ChatScreen() {
     const [messages, setMessages] = useState<Message[]>([]);

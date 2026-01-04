@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch } from 'react-native';
 import { X, Check, FileText, CheckSquare, DollarSign, Plus, AlarmClock, Trash } from 'lucide-react-native';
-import { ActivityService, activityService, ActivityItem } from '../services/database/ActivityService';
+import { ActivityService, activityService } from '../services/database/ActivityService';
+import { ActivityItem } from '../types';
+
 import { useAuthStore } from '../store/authStore';
 import { notificationService } from '../services/notifications/NotificationService';
 import CustomAlertModal from './common/CustomAlertModal';
 import CustomDatePickerModal from './common/CustomDatePickerModal';
 import { LocalCategorizer } from '../services/ai/LocalCategorizer';
 import { BlurView } from 'expo-blur';
-import RecurrencePicker, { RecurrenceRule } from './common/RecurrencePicker';
+import RecurrencePicker from './common/RecurrencePicker';
+import { RecurrenceRule } from '../types';
+
 import { Repeat } from 'lucide-react-native';
 
 type ActivityType = 'note' | 'task' | 'expense';

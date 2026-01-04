@@ -4,7 +4,9 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Calendar, Clock, X, Check, Repeat } from 'lucide-react-native';
 import CalendarView from './CalendarView';
 import TimePickerView from './TimePickerView';
-import RecurrenceOptions, { RecurrenceRule } from './RecurrencePicker';
+import RecurrenceOptions from './RecurrencePicker';
+import { RecurrenceRule } from '../../types';
+
 
 interface CustomDatePickerModalProps {
     visible: boolean;
