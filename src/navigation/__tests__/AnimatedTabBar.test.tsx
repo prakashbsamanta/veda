@@ -25,6 +25,10 @@ describe('AnimatedTabBar', () => {
         navigate: jest.fn(),
     };
 
+    const mockPosition = { interpolate: jest.fn() } as any; // Mock Animated.Value interface roughly
+    const mockLayout = { width: 320, height: 60 };
+    const mockJumpTo = jest.fn();
+
     const mockState = {
         index: 0,
         routes: [
@@ -64,7 +68,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 
@@ -80,7 +86,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
         // We can't easily check styles in unit test without testID on containers, but we verify it renders without crash
@@ -92,7 +100,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 
@@ -114,7 +124,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 
@@ -136,7 +148,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 
@@ -153,7 +167,9 @@ describe('AnimatedTabBar', () => {
                 state={mockState as any}
                 descriptors={mockDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 
@@ -179,7 +195,9 @@ describe('AnimatedTabBar', () => {
                 state={splitState as any}
                 descriptors={splitDescriptors as any}
                 navigation={mockNavigation as any}
-                insets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                layout={mockLayout}
+                position={mockPosition}
+                jumpTo={mockJumpTo}
             />
         );
 

@@ -1,13 +1,13 @@
 import { BlurView } from 'expo-blur';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
-export default function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export default function AnimatedTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
     const insets = useSafeAreaInsets();
     const paddingBottom = Math.max(insets.bottom, 20);
     const containerHeight = 60 + paddingBottom;
@@ -86,10 +86,10 @@ function TabItem({ isFocused, label, options, onPress, onLongPress }: any) {
 
     const backgroundColor = animation.interpolate({
         inputRange: [0, 1],
-        outputRange: ['transparent', theme.colors.transparent.accent_subtle], // Subtle gold bg
+        outputRange: ['transparent', '#A05040'], // Terracotta color from screenshot
     });
 
-    const iconColor = isFocused ? theme.colors.accent.primary : theme.colors.text.muted;
+    const iconColor = isFocused ? '#FFFFFF' : theme.colors.text.muted; // White when active
 
     // Label Opacity, Width and Translate
     const labelOpacity = animation.interpolate({
@@ -106,6 +106,8 @@ function TabItem({ isFocused, label, options, onPress, onLongPress }: any) {
         inputRange: [0, 1],
         outputRange: [0, 8]
     });
+
+    const textColor = isFocused ? '#FFFFFF' : theme.colors.text.primary;
 
     return (
         <AnimatedTouchableOpacity
@@ -131,11 +133,10 @@ function TabItem({ isFocused, label, options, onPress, onLongPress }: any) {
                     opacity: labelOpacity,
                     maxWidth: labelWidth,
                     marginLeft: labelMarginLeft,
-                    height: '100%',
                     justifyContent: 'center',
                     overflow: 'hidden',
                 }}>
-                    <Text numberOfLines={1} style={[styles.label, { color: theme.colors.text.primary }]}>
+                    <Text numberOfLines={1} style={[styles.label, { color: textColor }]}>
                         {label}
                     </Text>
                 </Animated.View>

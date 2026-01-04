@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
 import { MainTabParamList } from '../types';
@@ -11,7 +11,7 @@ import DebugScreen from '../screens/DebugScreen'; // Keep DebugScreen for now
 
 import { Home, Activity, MessageCircle, Settings, Terminal } from 'lucide-react-native';
 
-const Tab = createBottomTabNavigator<MainTabParamList & { Debug: undefined }>();
+const Tab = createMaterialTopTabNavigator<MainTabParamList & { Debug: undefined }>();
 
 export const getTabBarIcon = (routeName: string, { color, size }: { color: string; size: number }) => {
     switch (routeName) {
@@ -42,9 +42,10 @@ export default function MainNavigator() {
     return (
         <Tab.Navigator
             tabBar={(props) => <AnimatedTabBar {...props} />}
+            tabBarPosition="bottom"
             screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarIcon: (props) => getTabBarIcon(route.name, props),
+                swipeEnabled: true,
+                tabBarIcon: (props) => getTabBarIcon(route.name, { ...props, size: 24 }),
             })}
         >
             <Tab.Screen name="Dashboard" component={DashboardScreen} />
@@ -54,9 +55,6 @@ export default function MainNavigator() {
             <Tab.Screen
                 name="Debug"
                 component={DebugScreen}
-                options={{
-                    tabBarButton: () => null
-                }}
             />
         </Tab.Navigator>
     );
