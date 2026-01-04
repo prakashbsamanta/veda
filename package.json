@@ -69,7 +69,7 @@
     "jest-expo": "^54.0.16",
     "lint-staged": "^16.2.7",
     "react-native-dotenv": "^3.4.11",
-    "react-test-renderer": "^19.1.0",
+    "react-test-renderer": "^19.2.3",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.50.1"
   },
