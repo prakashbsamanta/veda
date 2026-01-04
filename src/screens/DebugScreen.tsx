@@ -6,6 +6,7 @@ import { cloudAIService } from '../services/ai/CloudAIService';
 import { GEMINI_API_KEY, PERPLEXITY_API_KEY } from '@env';
 import { DEFAULT_LLM_CONFIG } from '../config/llmConfig';
 import { LLMConfig } from '../types';
+import { theme } from '../theme';
 
 
 export default function DebugScreen() {
@@ -76,14 +77,14 @@ export default function DebugScreen() {
                     ) : isInitialized ? (
                         <Text style={styles.successText}>Database Initialized ✅</Text>
                     ) : (
-                        <ActivityIndicator size="small" color="#E5D0AC" />
+                        <ActivityIndicator size="small" color={theme.colors.accent.primary} />
                     )}
                 </View>
             </View>
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Local AI</Text>
-                <Text style={[styles.statusText, { color: '#E5D0AC' }]}>{aiStatus}</Text>
+                <Text style={[styles.statusText, { color: theme.colors.accent.primary }]}>{aiStatus}</Text>
             </View>
 
             <View style={styles.section}>
@@ -125,34 +126,34 @@ export default function DebugScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 20,
-        backgroundColor: '#1C1C1E',
+        padding: theme.spacing.lg,
+        backgroundColor: theme.colors.background.primary,
         minHeight: '100%',
     },
     header: {
-        marginBottom: 30,
+        marginBottom: theme.spacing.xl,
         alignItems: 'center',
     },
     title: {
-        fontSize: 32,
+        fontSize: theme.typography.size.display,
         fontWeight: 'bold',
-        color: '#E5D0AC',
-        marginBottom: 5,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.xs,
     },
     subtitle: {
-        fontSize: 14,
-        color: '#A1A1AA',
+        fontSize: theme.typography.size.md,
+        color: theme.colors.text.muted,
     },
     section: {
-        marginBottom: 25,
-        padding: 15,
-        backgroundColor: '#2C2C2E',
+        marginBottom: theme.spacing.lg,
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 12,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: '600',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         marginBottom: 10,
     },
     statusRow: {
@@ -160,15 +161,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     successText: {
-        color: '#4CAF50',
-        fontSize: 16,
+        color: theme.colors.accent.success,
+        fontSize: theme.typography.size.lg,
     },
     errorText: {
-        color: '#FF5252',
-        fontSize: 16,
+        color: theme.colors.accent.error,
+        fontSize: theme.typography.size.lg,
     },
     statusText: {
-        fontSize: 16,
+        fontSize: theme.typography.size.lg,
     },
     button: {
         paddingVertical: 12,
@@ -178,29 +179,29 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     geminiButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
     },
     perplexityButton: {
-        backgroundColor: '#20B2AA', // Light Sea Green for Perplexity distinction
+        backgroundColor: '#20B2AA', // Custom color for perplexity
     },
     pingButton: {
-        backgroundColor: '#555',
+        backgroundColor: theme.colors.background.tertiary,
         marginTop: 5,
     },
     buttonText: {
-        color: '#1C1C1E',
-        fontSize: 15,
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.size.md,
         fontWeight: 'bold',
     },
     resultBox: {
         marginTop: 15,
         padding: 10,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
         borderRadius: 8,
         minHeight: 50,
     },
     resultText: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         fontSize: 14,
         fontFamily: 'monospace',
     }

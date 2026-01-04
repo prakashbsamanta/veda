@@ -14,6 +14,7 @@ import RecurrencePicker from './common/RecurrencePicker';
 import { RecurrenceRule } from '../types';
 
 import { Repeat } from 'lucide-react-native';
+import { theme } from '../theme';
 
 type ActivityType = 'note' | 'task' | 'expense';
 
@@ -204,7 +205,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                     <View style={styles.header}>
                         <Text style={styles.title}>{initialActivity ? 'Edit Activity' : 'Log Activity'}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <X color="#FFF" size={24} />
+                            <X color={theme.colors.text.secondary} size={24} />
                         </TouchableOpacity>
                     </View>
 
@@ -215,9 +216,9 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                             <TouchableOpacity
                                 style={[styles.typeBadge, {
                                     backgroundColor: type === 'expense' ? 'rgba(255, 69, 58, 0.2)' :
-                                        type === 'task' ? 'rgba(74, 144, 226, 0.2)' : 'rgba(229, 208, 172, 0.2)',
-                                    borderColor: type === 'expense' ? '#FF453A' :
-                                        type === 'task' ? '#4A90E2' : '#E5D0AC'
+                                        type === 'task' ? theme.colors.transparent.blue_subtle : theme.colors.transparent.accent_subtle,
+                                    borderColor: type === 'expense' ? theme.colors.accent.error :
+                                        type === 'task' ? theme.colors.accent.secondary : theme.colors.accent.primary
                                 }]}
                                 onPress={() => {
                                     // Cycle types on click or show alert? Cycling is easy.
@@ -225,12 +226,12 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                     setType(next);
                                 }}
                             >
-                                {type === 'note' && <FileText size={14} color="#E5D0AC" />}
-                                {type === 'task' && <CheckSquare size={14} color="#4A90E2" />}
-                                {type === 'expense' && <DollarSign size={14} color="#FF453A" />}
+                                {type === 'note' && <FileText size={14} color={theme.colors.accent.primary} />}
+                                {type === 'task' && <CheckSquare size={14} color={theme.colors.accent.secondary} />}
+                                {type === 'expense' && <DollarSign size={14} color={theme.colors.accent.error} />}
                                 <Text style={[styles.typeBadgeText, {
-                                    color: type === 'expense' ? '#FF453A' :
-                                        type === 'task' ? '#4A90E2' : '#E5D0AC'
+                                    color: type === 'expense' ? theme.colors.accent.error :
+                                        type === 'task' ? theme.colors.accent.secondary : theme.colors.accent.primary
                                 }]}>
                                     {type.charAt(0).toUpperCase() + type.slice(1)}
                                 </Text>
@@ -244,7 +245,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                 <TextInput
                                     style={styles.input}
                                     placeholder="What's this about?"
-                                    placeholderTextColor="#666"
+                                    placeholderTextColor={theme.colors.text.muted}
                                     value={title}
                                     onChangeText={(text) => {
                                         setTitle(text);
@@ -263,7 +264,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                 <TextInput
                                     style={[styles.input, styles.textArea]}
                                     placeholder="Add details (categories, tags, etc.)"
-                                    placeholderTextColor="#666"
+                                    placeholderTextColor={theme.colors.text.muted}
                                     multiline
                                     value={description}
                                     onChangeText={setDescription}
@@ -276,13 +277,13 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                             {/* Amount Field - Always visible but optional */}
                             <View style={styles.inputGroup}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                    <DollarSign size={16} color="#A1A1AA" />
+                                    <DollarSign size={16} color={theme.colors.text.muted} />
                                     <Text style={styles.label}>Amount (INR)</Text>
                                 </View>
                                 <TextInput
                                     style={styles.input}
                                     placeholder="0.00"
-                                    placeholderTextColor="#666"
+                                    placeholderTextColor={theme.colors.text.muted}
                                     keyboardType="numeric"
                                     value={amount}
                                     onChangeText={(val) => {
@@ -301,7 +302,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                             <View style={styles.reminderSection}>
                                 <View style={styles.reminderHeader}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                        <AlarmClock color="#E5D0AC" size={20} />
+                                        <AlarmClock color={theme.colors.accent.primary} size={20} />
                                         <Text style={styles.label}>Set Reminder</Text>
                                     </View>
                                     <Switch
@@ -313,8 +314,8 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                             // If turned off, and no amount, maybe revert to note? 
                                             // Keep it simple. specific action -> specific type.
                                         }}
-                                        trackColor={{ false: "#2C2C2E", true: "#E5D0AC" }}
-                                        thumbColor={hasReminder ? "#1C1C1E" : "#f4f3f4"}
+                                        trackColor={{ false: theme.colors.background.secondary, true: theme.colors.accent.primary }}
+                                        thumbColor={hasReminder ? theme.colors.text.inverse : "#f4f3f4"}
                                     />
                                 </View>
 
@@ -323,25 +324,25 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                         <TouchableOpacity
                                             testID="date-picker-button"
                                             style={[styles.dateButton, {
-                                                backgroundColor: recurrenceRule?.frequency !== 'none' && recurrenceRule ? '#E5D0AC' : '#2C2C2E'
+                                                backgroundColor: recurrenceRule?.frequency !== 'none' && recurrenceRule ? theme.colors.accent.primary : theme.colors.background.secondary
                                             }]}
                                             onPress={() => setDatePickerVisible(true)}
                                         >
                                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                                 {recurrenceRule?.frequency !== 'none' && recurrenceRule ? (
-                                                    <Repeat size={16} color="#1C1C1E" />
+                                                    <Repeat size={16} color={theme.colors.text.inverse} />
                                                 ) : (
-                                                    <AlarmClock size={16} color="#AAAAAA" />
+                                                    <AlarmClock size={16} color={theme.colors.text.muted} />
                                                 )}
                                                 <Text style={[
                                                     styles.dateText,
-                                                    recurrenceRule?.frequency !== 'none' && recurrenceRule && { color: '#1C1C1E', fontWeight: 'bold' }
+                                                    recurrenceRule?.frequency !== 'none' && recurrenceRule && { color: theme.colors.text.inverse, fontWeight: 'bold' }
                                                 ]}>
                                                     {reminderDate.toLocaleDateString()} at {reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </Text>
                                             </View>
                                             {recurrenceRule?.frequency !== 'none' && recurrenceRule && (
-                                                <Text style={{ fontSize: 10, color: '#1C1C1E', marginTop: 2 }}>
+                                                <Text style={{ fontSize: 10, color: theme.colors.text.inverse, marginTop: 2 }}>
                                                     Repeats {recurrenceRule.frequency}
                                                 </Text>
                                             )}
@@ -357,10 +358,10 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <ActivityIndicator color="#1C1C1E" />
+                                    <ActivityIndicator color={theme.colors.text.inverse} />
                                 ) : (
                                     <>
-                                        <Plus color="#1C1C1E" size={24} />
+                                        <Plus color={theme.colors.text.inverse} size={24} />
                                         <Text style={styles.saveButtonText}>{initialActivity ? 'Update Entry' : 'Save Entry'}</Text>
                                     </>
                                 )}
@@ -372,7 +373,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                     onPress={handleDelete}
                                     disabled={loading}
                                 >
-                                    <Trash color="#FF453A" size={20} />
+                                    <Trash color={theme.colors.accent.error} size={20} />
                                     <Text style={styles.deleteButtonText}>Delete Activity</Text>
                                 </TouchableOpacity>
                             )}
@@ -411,24 +412,24 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         backgroundColor: 'rgba(28, 28, 30, 0.7)', // Semi-transparent for blur fallback or tint
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
+        borderTopLeftRadius: theme.spacing.lg,
+        borderTopRightRadius: theme.spacing.lg,
+        padding: theme.spacing.lg,
         maxHeight: '80%',
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.1)',
-        overflow: 'hidden', // Need this for BlurView to respect border radius
+        borderTopColor: theme.colors.border.subtle,
+        overflow: 'hidden',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: theme.spacing.lg,
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
     },
     closeButton: {
         padding: 4,
@@ -437,18 +438,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 20,
-        gap: 12
+        gap: theme.spacing.sm + 4 // 12
     },
     typeLabel: {
-        color: '#666',
-        fontSize: 14,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.md,
     },
     typeBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: theme.spacing.md,
         borderWidth: 1,
         gap: 6
     },
@@ -457,16 +458,16 @@ const styles = StyleSheet.create({
         fontSize: 13
     },
     sectionLabel: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
-        marginTop: 8,
-        marginBottom: 4
+        marginTop: theme.spacing.sm,
+        marginBottom: theme.spacing.xs
     },
-    typeSelector: { // Keeping these for now just in case, but they are unused in new layout
+    typeSelector: {
         flexDirection: 'row',
         gap: 10,
-        marginBottom: 24
+        marginBottom: theme.spacing.lg
     },
     typeButton: {
         flex: 1,
@@ -475,41 +476,41 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 12,
         borderRadius: 12,
-        backgroundColor: '#2C2C2E',
-        gap: 8,
+        backgroundColor: theme.colors.background.secondary,
+        gap: theme.spacing.sm,
         borderWidth: 1,
-        borderColor: '#2C2C2E'
+        borderColor: theme.colors.background.secondary
     },
     typeButtonActive: {
-        backgroundColor: '#E5D0AC',
-        borderColor: '#E5D0AC'
+        backgroundColor: theme.colors.accent.primary,
+        borderColor: theme.colors.accent.primary
     },
     typeText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
         fontWeight: 'bold',
-        fontSize: 14
+        fontSize: theme.typography.size.md
     },
     typeTextActive: {
-        color: '#1C1C1E'
+        color: theme.colors.text.inverse
     },
     form: {
         gap: 20,
-        paddingBottom: 40 // Extra padding for safe area
+        paddingBottom: theme.spacing.xxl
     },
     inputGroup: {
-        gap: 8,
+        gap: theme.spacing.sm,
     },
     label: {
-        color: '#A1A1AA',
-        fontSize: 14,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.md,
         fontWeight: '500',
     },
     input: {
-        backgroundColor: '#2C2C2E',
-        padding: 16,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
         borderRadius: 12,
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         borderWidth: 1,
         borderColor: 'transparent'
     },
@@ -519,42 +520,42 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         flexDirection: 'row',
-        backgroundColor: '#E5D0AC',
-        padding: 16,
+        backgroundColor: theme.colors.accent.primary,
+        padding: theme.spacing.md,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 8,
-        gap: 8
+        marginTop: theme.spacing.sm,
+        gap: theme.spacing.sm
     },
     deleteButton: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(255, 69, 58, 0.1)',
-        padding: 16,
+        backgroundColor: theme.colors.transparent.background_subtle, // Using transparent subte? Or fixed. The original was rgba(255, 69, 58, 0.1)
+        padding: theme.spacing.md,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 0,
-        gap: 8,
+        gap: theme.spacing.sm,
         borderWidth: 1,
         borderColor: 'rgba(255, 69, 58, 0.3)'
     },
     deleteButtonText: {
-        color: '#FF453A',
+        color: theme.colors.accent.error,
         fontWeight: 'bold',
-        fontSize: 16
+        fontSize: theme.typography.size.lg
     },
     disabledButton: {
         opacity: 0.7,
     },
     saveButtonText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
-        fontSize: 16
+        fontSize: theme.typography.size.lg
     },
     reminderSection: {
-        backgroundColor: '#2C2C2E',
-        padding: 16,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
         borderRadius: 12,
         gap: 12
     },
@@ -564,16 +565,16 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     dateButton: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
         padding: 12,
-        borderRadius: 8,
+        borderRadius: theme.spacing.sm,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E5D0AC'
+        borderColor: theme.colors.accent.primary
     },
     dateText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
         fontWeight: '500',
-        fontSize: 16
+        fontSize: theme.typography.size.lg
     }
 });

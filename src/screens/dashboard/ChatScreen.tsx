@@ -19,6 +19,7 @@ import * as FileSystem from 'expo-file-system';
 import { cloudAIService } from '../../services/ai/CloudAIService';
 import { useAuthStore } from '../../store/authStore';
 import { Message } from '../../types/chat';
+import { theme } from '../../theme';
 
 
 export default function ChatScreen() {
@@ -212,16 +213,16 @@ export default function ChatScreen() {
                         disabled={loading}
                     >
                         {isRecording ? (
-                            <Square color="#1C1C1E" size={24} fill="#1C1C1E" />
+                            <Square color={theme.colors.text.inverse} size={24} fill={theme.colors.text.inverse} />
                         ) : (
-                            <Mic color={loading ? "#666" : "#E5D0AC"} size={24} />
+                            <Mic color={loading ? theme.colors.text.muted : theme.colors.accent.primary} size={24} />
                         )}
                     </TouchableOpacity>
 
                     <TextInput
                         style={styles.input}
                         placeholder={isRecording ? "Listening..." : "Ask anything..."}
-                        placeholderTextColor="#666"
+                        placeholderTextColor={theme.colors.text.muted}
                         value={inputText}
                         onChangeText={setInputText}
                         editable={!loading && !isRecording}
@@ -233,9 +234,9 @@ export default function ChatScreen() {
                         disabled={!inputText.trim() || loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="#1C1C1E" size="small" />
+                            <ActivityIndicator color={theme.colors.text.inverse} size="small" />
                         ) : (
-                            <Send color="#1C1C1E" size={20} />
+                            <Send color={theme.colors.text.inverse} size={20} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -247,25 +248,25 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     header: {
-        padding: 16,
+        padding: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
+        borderBottomColor: theme.colors.border.primary,
         alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#E5D0AC',
+        color: theme.colors.text.primary,
     },
     list: {
         flex: 1,
     },
     listContent: {
-        padding: 16,
-        gap: 16,
+        padding: theme.spacing.md,
+        gap: theme.spacing.md,
     },
     messageBubble: {
         maxWidth: '80%',
@@ -274,44 +275,44 @@ const styles = StyleSheet.create({
     },
     userBubble: {
         alignSelf: 'flex-end',
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         borderBottomRightRadius: 4,
     },
     aiBubble: {
         alignSelf: 'flex-start',
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderBottomLeftRadius: 4,
     },
     messageText: {
-        fontSize: 16,
+        fontSize: theme.typography.size.lg,
     },
     userText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     aiText: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
     },
     inputContainer: {
         flexDirection: 'row',
-        padding: 16,
+        padding: theme.spacing.md,
         borderTopWidth: 1,
-        borderTopColor: '#2C2C2E',
-        backgroundColor: '#1C1C1E',
+        borderTopColor: theme.colors.border.primary,
+        backgroundColor: theme.colors.background.primary,
         gap: 12,
         alignItems: 'center',
     },
     input: {
         flex: 1,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 24,
         paddingHorizontal: 20,
         paddingVertical: 12,
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         maxHeight: 100,
     },
     sendButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         width: 44,
         height: 44,
         borderRadius: 22,
@@ -329,6 +330,6 @@ const styles = StyleSheet.create({
         borderRadius: 22,
     },
     micButtonActive: {
-        backgroundColor: '#FF453A',
+        backgroundColor: theme.colors.accent.error,
     }
 });

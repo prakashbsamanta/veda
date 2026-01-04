@@ -60,55 +60,56 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
     );
 }
 
+import { theme } from '../../theme';
+
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly lighter overlay to show off blur? standard is ok.
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 24,
+        padding: theme.spacing.lg,
     },
     alertContainer: {
         backgroundColor: 'rgba(28, 28, 30, 0.75)', // Glassy background
-        borderRadius: 16,
-        padding: 24,
+        borderRadius: theme.spacing.md,
+        padding: theme.spacing.lg,
         width: '100%',
         maxWidth: 340,
-        // elevation: 5, // elevation messes with overflow sometimes on android with blur
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        overflow: 'hidden', // Required for BlurView
+        borderColor: theme.colors.border.subtle,
+        overflow: 'hidden',
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 8,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.sm,
     },
     message: {
-        fontSize: 16,
-        color: '#A1A1AA',
-        marginBottom: 24,
+        fontSize: theme.typography.size.lg,
+        color: theme.colors.text.muted,
+        marginBottom: theme.spacing.lg,
         lineHeight: 22,
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: 16,
+        gap: theme.spacing.md,
     },
     button: {
-        paddingVertical: 8,
+        paddingVertical: theme.spacing.sm,
         paddingHorizontal: 12,
     },
     buttonText: {
-        color: '#E5D0AC',
-        fontSize: 16,
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
     },
     cancelText: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
     },
     destructiveText: {
-        color: '#FF453A',
+        color: theme.colors.accent.error,
     },
 });

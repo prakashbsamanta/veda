@@ -7,6 +7,7 @@ import { ActivityItem } from '../../types';
 
 import { useFocusEffect } from '@react-navigation/native';
 import LogActivityModal from '../../components/LogActivityModal';
+import { theme } from '../../theme';
 
 export default function ActivityScreen() {
     const { user } = useAuthStore();
@@ -41,7 +42,7 @@ export default function ActivityScreen() {
                 style={styles.addButton}
                 onPress={() => setIsModalVisible(true)}
             >
-                <Plus color="#1C1C1E" size={24} />
+                <Plus color={theme.colors.text.inverse} size={24} />
             </TouchableOpacity>
         </View>
     );
@@ -49,9 +50,9 @@ export default function ActivityScreen() {
     const renderItem = ({ item }: { item: ActivityItem }) => (
         <View style={styles.activityCard}>
             <View style={styles.activityIcon}>
-                {item.type === 'note' && <FileText color="#E5D0AC" size={20} />}
-                {item.type === 'task' && <CheckSquare color="#4A90E2" size={20} />}
-                {item.type === 'expense' && <DollarSign color="#FF453A" size={20} />}
+                {item.type === 'note' && <FileText color={theme.colors.accent.primary} size={20} />}
+                {item.type === 'task' && <CheckSquare color={theme.colors.accent.secondary} size={20} />}
+                {item.type === 'expense' && <DollarSign color={theme.colors.accent.error} size={20} />}
             </View>
             <View style={styles.activityContent}>
                 <Text style={styles.activityTitle}>{item.title}</Text>
@@ -64,7 +65,7 @@ export default function ActivityScreen() {
                 <Text style={styles.activityAmount}>-{item.currency} {item.amount}</Text>
             )}
             <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                <Trash2 color="#666" size={18} />
+                <Trash2 color={theme.colors.text.muted} size={18} />
             </TouchableOpacity>
         </View>
     );
@@ -94,17 +95,17 @@ export default function ActivityScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1C1C1E' },
-    content: { padding: 20, paddingTop: 60, paddingBottom: 100 },
+    container: { flex: 1, backgroundColor: theme.colors.background.primary },
+    content: { padding: theme.spacing.lg, paddingTop: 60, paddingBottom: 100 },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24
+        marginBottom: theme.spacing.xl
     },
-    headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#E5D0AC' },
+    headerTitle: { fontSize: theme.typography.size.xxl, fontWeight: 'bold', color: theme.colors.text.primary },
     addButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -113,27 +114,27 @@ const styles = StyleSheet.create({
     },
     activityCard: {
         flexDirection: 'row',
-        backgroundColor: '#2C2C2E',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 10,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
+        borderRadius: theme.spacing.sm + 4, // 12
+        marginBottom: theme.spacing.sm + 2,
         alignItems: 'center',
-        gap: 12
+        gap: theme.spacing.sm + 4
     },
     activityIcon: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: theme.colors.transparent.background_subtle,
         justifyContent: 'center',
         alignItems: 'center'
     },
     activityContent: { flex: 1 },
-    activityTitle: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-    activityDesc: { color: '#888', fontSize: 12, marginTop: 2 },
-    activityDate: { color: '#666', fontSize: 10, marginTop: 4 },
-    activityAmount: { color: '#FF453A', fontWeight: 'bold', marginRight: 8 },
+    activityTitle: { color: theme.colors.text.secondary, fontSize: theme.typography.size.lg, fontWeight: '600' },
+    activityDesc: { color: theme.colors.text.muted, fontSize: theme.typography.size.sm, marginTop: 2 },
+    activityDate: { color: theme.colors.text.muted, fontSize: 10, marginTop: 4 },
+    activityAmount: { color: theme.colors.accent.error, fontWeight: 'bold', marginRight: theme.spacing.sm },
     deleteButton: { padding: 4 },
     emptyState: { alignItems: 'center', marginTop: 40 },
-    emptyText: { color: '#666', fontStyle: 'italic' }
+    emptyText: { color: theme.colors.text.muted, fontStyle: 'italic' }
 });

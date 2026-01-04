@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 're
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { theme } from '../theme';
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -85,10 +86,10 @@ function TabItem({ isFocused, label, options, onPress, onLongPress }: any) {
 
     const backgroundColor = animation.interpolate({
         inputRange: [0, 1],
-        outputRange: ['transparent', 'rgba(229, 208, 172, 0.15)'], // Subtle gold bg
+        outputRange: ['transparent', theme.colors.transparent.accent_subtle], // Subtle gold bg
     });
 
-    const iconColor = isFocused ? '#E5D0AC' : '#A1A1AA';
+    const iconColor = isFocused ? theme.colors.accent.primary : theme.colors.text.muted;
 
     // Label Opacity, Width and Translate
     const labelOpacity = animation.interpolate({
@@ -134,7 +135,7 @@ function TabItem({ isFocused, label, options, onPress, onLongPress }: any) {
                     justifyContent: 'center',
                     overflow: 'hidden',
                 }}>
-                    <Text numberOfLines={1} style={[styles.label, { color: '#E5D0AC' }]}>
+                    <Text numberOfLines={1} style={[styles.label, { color: theme.colors.text.primary }]}>
                         {label}
                     </Text>
                 </Animated.View>

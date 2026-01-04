@@ -6,6 +6,7 @@ import CalendarView from './CalendarView';
 import TimePickerView from './TimePickerView';
 import RecurrenceOptions from './RecurrencePicker';
 import { RecurrenceRule } from '../../types';
+import { theme } from '../../theme';
 
 
 interface CustomDatePickerModalProps {
@@ -73,7 +74,7 @@ export default function CustomDatePickerModal({
                                     style={[styles.tab, currentTab === 'date' && styles.activeTab]}
                                     onPress={() => setCurrentTab('date')}
                                 >
-                                    <Calendar color={currentTab === 'date' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    <Calendar color={currentTab === 'date' ? theme.colors.text.inverse : theme.colors.accent.primary} size={18} />
                                     <Text style={[styles.tabText, currentTab === 'date' && styles.activeTabText]}>
                                         {formatDatePreview(selectedDate)}
                                     </Text>
@@ -85,7 +86,7 @@ export default function CustomDatePickerModal({
                                     style={[styles.tab, currentTab === 'time' && styles.activeTab]}
                                     onPress={() => setCurrentTab('time')}
                                 >
-                                    <Clock color={currentTab === 'time' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    <Clock color={currentTab === 'time' ? theme.colors.text.inverse : theme.colors.accent.primary} size={18} />
                                     <Text style={[styles.tabText, currentTab === 'time' && styles.activeTabText]}>
                                         {formatTimePreview(selectedDate)}
                                     </Text>
@@ -98,7 +99,7 @@ export default function CustomDatePickerModal({
                                     style={[styles.tab, currentTab === 'repeat' && styles.activeTab]}
                                     onPress={() => setCurrentTab('repeat')}
                                 >
-                                    <Repeat color={currentTab === 'repeat' ? '#1C1C1E' : '#E5D0AC'} size={18} />
+                                    <Repeat color={currentTab === 'repeat' ? theme.colors.text.inverse : theme.colors.accent.primary} size={18} />
                                     {recurrenceRule && recurrenceRule.frequency !== 'none' && (
                                         <View style={styles.badge} />
                                     )}
@@ -106,7 +107,7 @@ export default function CustomDatePickerModal({
                             )}
                         </View>
                         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                            <X color="#A1A1AA" size={24} />
+                            <X color={theme.colors.text.muted} size={24} />
                         </TouchableOpacity>
                     </View>
 
@@ -134,7 +135,7 @@ export default function CustomDatePickerModal({
                     {/* Footer Actions */}
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-                            <Check color="#1C1C1E" size={20} />
+                            <Check color={theme.colors.text.inverse} size={20} />
                             <Text style={styles.confirmText}>Confirm</Text>
                         </TouchableOpacity>
                     </View>
@@ -156,19 +157,19 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: theme.colors.border.subtle,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
+        borderBottomColor: theme.colors.border.primary,
         justifyContent: 'space-between',
     },
     tabs: {
         flexDirection: 'row',
-        gap: 8,
+        gap: theme.spacing.sm,
     },
     tab: {
         flexDirection: 'row',
@@ -176,25 +177,25 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         gap: 8,
     },
     activeTab: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
     },
     tabText: {
-        color: '#E5D0AC',
-        fontSize: 14,
+        color: theme.colors.accent.primary,
+        fontSize: theme.typography.size.sm,
         fontWeight: 'bold',
     },
     activeTabText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     badge: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#1C1C1E', // Dark dot on Gold active tab
+        backgroundColor: theme.colors.text.inverse,
         position: 'absolute',
         top: 6,
         right: 6,
@@ -209,12 +210,12 @@ const styles = StyleSheet.create({
     footer: {
         padding: 16,
         borderTopWidth: 1,
-        borderTopColor: '#2C2C2E',
+        borderTopColor: theme.colors.border.primary,
         alignItems: 'flex-end',
     },
     confirmButton: {
         flexDirection: 'row',
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 12,
@@ -222,7 +223,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     confirmText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
         fontSize: 16,
     }
