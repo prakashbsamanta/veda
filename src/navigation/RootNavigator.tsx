@@ -6,7 +6,7 @@ import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import ModelBrowserScreen from '../screens/settings/ModelBrowserScreen';
 import { ActivityIndicator, View } from 'react-native';
-import { RootStackParamList } from './types';
+import { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

@@ -8,25 +8,28 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator
+    ActivityIndicator,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send } from 'lucide-react-native';
+import { Send, Mic, Square } from 'lucide-react-native';
+import { Audio } from 'expo-av';
+import * as Speech from 'expo-speech';
+import * as FileSystem from 'expo-file-system';
 import { cloudAIService } from '../../services/ai/CloudAIService';
 import { useAuthStore } from '../../store/authStore';
+import { Message } from '../../types/chat';
+import { theme } from '../../theme';
 
-interface Message {
-    id: string;
-    text: string;
-    sender: 'user' | 'ai';
-    timestamp: number;
-}
 
 export default function ChatScreen() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [recording, setRecording] = useState<Audio.Recording | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+    const recordingRef = useRef<Audio.Recording | null>(null);
     const { user } = useAuthStore();
 
     // Initial greeting
@@ -41,7 +44,83 @@ export default function ChatScreen() {
                 }
             ]);
         }
+        return () => {
+            if (recordingRef.current) {
+                recordingRef.current.stopAndUnloadAsync();
+            }
+        };
     }, []);
+
+    const startRecording = async () => {
+        try {
+            const permission = await Audio.requestPermissionsAsync();
+            if (permission.status !== 'granted') {
+                Alert.alert('Permission needed', 'Please grant microphone permission to use voice chat.');
+                return;
+            }
+
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true,
+            });
+
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+
+            setRecording(recording);
+            recordingRef.current = recording;
+            setIsRecording(true);
+        } catch (err) {
+            console.error('Failed to start recording', err);
+            Alert.alert('Error', 'Failed to start recording.');
+        }
+    };
+
+    const stopRecording = async () => {
+        if (!recording) return;
+
+        setIsRecording(false);
+        setLoading(true);
+
+        try {
+            await recording.stopAndUnloadAsync();
+            const uri = recording.getURI();
+            setRecording(null);
+            recordingRef.current = null;
+
+            if (!uri) return;
+
+            // Convert to base64
+            const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                encoding: 'base64',
+            });
+
+            // Optimistic update for UI (optional, maybe just show "Processing audio...")
+
+            const response = await cloudAIService.generateResponseFromAudio(base64Audio);
+
+            // Add AI response directly
+            const aiMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: response.text,
+                sender: 'ai',
+                timestamp: Date.now()
+            };
+
+            setMessages(prev => [...prev, aiMsg]);
+
+            // Speak response
+            Speech.speak(response.text);
+
+        } catch (error) {
+            console.error('Recording/Analysis failed', error);
+            Alert.alert('Error', 'Failed to process audio.');
+        } finally {
+            setLoading(false);
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        }
+    };
 
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -71,6 +150,12 @@ export default function ChatScreen() {
             };
 
             setMessages(prev => [...prev, aiMsg]);
+
+            // Auto-speak response if desired, or maybe valid only for voice mode?
+            // For now let's only speak if it came from voice, or maybe just leave it silent for text input.
+            // If user wants TTS for text input, we can add a toggle. 
+            // Let's keep it silent for text input for now to avoid annoyance.
+
         } catch (error) {
             console.error("Chat Error:", error);
             const errorMsg: Message = {
@@ -121,13 +206,26 @@ export default function ChatScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={styles.inputContainer}>
+                    <TouchableOpacity
+                        style={[styles.micButton, isRecording && styles.micButtonActive]}
+                        onPressIn={startRecording}
+                        onPressOut={stopRecording}
+                        disabled={loading}
+                    >
+                        {isRecording ? (
+                            <Square color={theme.colors.text.inverse} size={24} fill={theme.colors.text.inverse} />
+                        ) : (
+                            <Mic color={loading ? theme.colors.text.muted : theme.colors.accent.primary} size={24} />
+                        )}
+                    </TouchableOpacity>
+
                     <TextInput
                         style={styles.input}
-                        placeholder="Ask anything..."
-                        placeholderTextColor="#666"
+                        placeholder={isRecording ? "Listening..." : "Ask anything..."}
+                        placeholderTextColor={theme.colors.text.muted}
                         value={inputText}
                         onChangeText={setInputText}
-                        editable={!loading}
+                        editable={!loading && !isRecording}
                         onSubmitEditing={handleSend}
                     />
                     <TouchableOpacity
@@ -136,9 +234,9 @@ export default function ChatScreen() {
                         disabled={!inputText.trim() || loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="#1C1C1E" size="small" />
+                            <ActivityIndicator color={theme.colors.text.inverse} size="small" />
                         ) : (
-                            <Send color="#1C1C1E" size={20} />
+                            <Send color={theme.colors.text.inverse} size={20} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -150,25 +248,25 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     header: {
-        padding: 16,
+        padding: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#2C2C2E',
+        borderBottomColor: theme.colors.border.primary,
         alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#E5D0AC',
+        color: theme.colors.text.primary,
     },
     list: {
         flex: 1,
     },
     listContent: {
-        padding: 16,
-        gap: 16,
+        padding: theme.spacing.md,
+        gap: theme.spacing.md,
     },
     messageBubble: {
         maxWidth: '80%',
@@ -177,44 +275,44 @@ const styles = StyleSheet.create({
     },
     userBubble: {
         alignSelf: 'flex-end',
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         borderBottomRightRadius: 4,
     },
     aiBubble: {
         alignSelf: 'flex-start',
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderBottomLeftRadius: 4,
     },
     messageText: {
-        fontSize: 16,
+        fontSize: theme.typography.size.lg,
     },
     userText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     aiText: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
     },
     inputContainer: {
         flexDirection: 'row',
-        padding: 16,
+        padding: theme.spacing.md,
         borderTopWidth: 1,
-        borderTopColor: '#2C2C2E',
-        backgroundColor: '#1C1C1E',
+        borderTopColor: theme.colors.border.primary,
+        backgroundColor: theme.colors.background.primary,
         gap: 12,
         alignItems: 'center',
     },
     input: {
         flex: 1,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 24,
         paddingHorizontal: 20,
         paddingVertical: 12,
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         maxHeight: 100,
     },
     sendButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         width: 44,
         height: 44,
         borderRadius: 22,
@@ -224,9 +322,14 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
         opacity: 0.5,
     },
-    sendButtonText: {
-        color: '#1C1C1E',
-        fontWeight: 'bold',
-        fontSize: 12,
+    micButton: {
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 22,
     },
+    micButtonActive: {
+        backgroundColor: theme.colors.accent.error,
+    }
 });

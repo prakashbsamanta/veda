@@ -11,8 +11,9 @@ import {
     Alert
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../navigation/types';
+import { AuthStackParamList } from '../../types/navigation';
 import { authService } from '../../services/auth/AuthService';
+import { theme } from '../../theme';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -63,7 +64,7 @@ export default function LoginScreen({ navigation }: Props) {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter your email"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={theme.colors.text.muted}
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
@@ -76,7 +77,7 @@ export default function LoginScreen({ navigation }: Props) {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter your password"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={theme.colors.text.muted}
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
@@ -91,7 +92,7 @@ export default function LoginScreen({ navigation }: Props) {
                         disabled={loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="#1C1C1E" />
+                            <ActivityIndicator color={theme.colors.text.inverse} />
                         ) : (
                             <Text style={styles.buttonText}>Sign In</Text>
                         )}
@@ -114,74 +115,74 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     content: {
         flex: 1,
         justifyContent: 'center',
-        padding: 24,
+        padding: theme.spacing.lg,
     },
     title: {
-        fontSize: 32,
+        fontSize: theme.typography.size.display,
         fontWeight: 'bold',
-        color: '#E5D0AC',
-        marginBottom: 8,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.sm,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#A1A1AA',
-        marginBottom: 48,
+        fontSize: theme.typography.size.lg,
+        color: theme.colors.text.muted,
+        marginBottom: 48, // Keeping this specific spacing
     },
     form: {
         gap: 20,
     },
     inputContainer: {
-        gap: 8,
+        gap: theme.spacing.sm,
     },
     label: {
-        color: '#E5D0AC',
-        fontSize: 14,
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.size.md,
         fontWeight: '500',
     },
     input: {
-        backgroundColor: '#2C2C2E',
-        borderRadius: 12,
-        padding: 16,
-        color: 'white',
-        fontSize: 16,
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: theme.spacing.sm + 4, // 12
+        padding: theme.spacing.md,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         borderWidth: 1,
-        borderColor: '#3A3A3C',
+        borderColor: theme.colors.background.tertiary,
     },
     button: {
-        backgroundColor: '#E5D0AC',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: theme.colors.accent.primary,
+        borderRadius: theme.spacing.sm + 4, // 12
+        padding: theme.spacing.md,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: theme.spacing.sm,
     },
     buttonDisabled: {
         opacity: 0.7,
     },
     buttonText: {
-        color: '#1C1C1E',
-        fontSize: 16,
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
     },
     errorText: {
-        color: '#FF453A',
-        fontSize: 14,
+        color: theme.colors.accent.error,
+        fontSize: theme.typography.size.md,
         textAlign: 'center',
     },
     linkButton: {
         alignItems: 'center',
-        marginTop: 16,
+        marginTop: theme.spacing.md,
     },
     linkText: {
-        color: '#A1A1AA',
-        fontSize: 14,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.md,
     },
     linkHighlight: {
-        color: '#E5D0AC',
+        color: theme.colors.text.primary,
         fontWeight: 'bold',
     },
 });

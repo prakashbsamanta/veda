@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { theme } from '../../theme';
 
 interface TimePickerViewProps {
     selectedDate: Date;
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-        gap: 16,
+        gap: theme.spacing.md,
     },
     timeBox: {
         flexDirection: 'row',
@@ -190,21 +191,21 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         fontVariant: ['tabular-nums'],
     },
     colon: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         marginHorizontal: 4,
         marginBottom: 8,
     },
     amPmContainer: {
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#3A3A3C',
+        borderColor: theme.colors.border.subtle,
         overflow: 'hidden',
     },
     amPmButton: {
@@ -212,20 +213,20 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
     },
     activeAmPm: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
     },
     amPmText: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         fontSize: 14,
         fontWeight: 'bold',
     },
     activeAmPmText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     selectionRow: {
         flexDirection: 'row',
         flex: 1, // Take remaining height
-        gap: 16,
+        gap: theme.spacing.md,
     },
     listWrapper: {
         flex: 1,
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
     listContainer: {
         flex: 1,
         width: '100%',
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 12,
         overflow: 'hidden',
-        height: ITEM_HEIGHT * VISIBLE_ITEMS, // 5 items visible
+        height: ITEM_HEIGHT * VISIBLE_ITEMS,
     },
     listLabel: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         fontSize: 12,
         marginBottom: 8,
         fontWeight: '600',
@@ -251,10 +252,10 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: ITEM_HEIGHT,
-        backgroundColor: 'rgba(229, 208, 172, 0.1)', // #E5D0AC with low opacity
+        backgroundColor: theme.colors.transparent.accent_subtle,
         borderTopWidth: 1,
         borderBottomWidth: 1,
-        borderColor: '#E5D0AC',
+        borderColor: theme.colors.accent.primary,
         zIndex: 10,
     },
     listItem: {
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     selectedListItemText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
         fontSize: 22,
         fontWeight: 'bold',
     },

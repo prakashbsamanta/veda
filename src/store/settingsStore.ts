@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_LLM_CONFIG, LLMConfig } from '../config/llmConfig';
+import { DEFAULT_LLM_CONFIG } from '../config/llmConfig';
+
 // import { cloudAIService } from '../services/ai/CloudAIService';
 import { logger } from '../utils/Logger';
 

@@ -3,14 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../services/auth/AuthService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainTabParamList } from '../../navigation/types';
+import { MainTabParamList } from '../../types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { MessageCircle, Activity, Terminal } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { activityService, ActivityItem } from '../../services/database/ActivityService';
+import { activityService } from '../../services/database/ActivityService';
+import { ActivityItem } from '../../types';
+
 import LogActivityModal from '../../components/LogActivityModal';
+import { theme } from '../../theme';
 
 // Navigation type definition
 type DashboardScreenNavigationProp = CompositeNavigationProp<
@@ -84,8 +87,8 @@ export default function DashboardScreen({ navigation }: Props) {
                         style={styles.actionCard}
                         onPress={() => navigation.navigate('Chat')}
                     >
-                        <View style={[styles.iconContainer, { backgroundColor: 'rgba(229, 208, 172, 0.1)' }]}>
-                            <MessageCircle color="#E5D0AC" size={32} />
+                        <View style={[styles.iconContainer, { backgroundColor: theme.colors.transparent.accent_subtle }]}>
+                            <MessageCircle color={theme.colors.accent.primary} size={32} />
                         </View>
                         <Text style={styles.actionText}>Ask Veda</Text>
                     </TouchableOpacity>
@@ -94,8 +97,8 @@ export default function DashboardScreen({ navigation }: Props) {
                         style={styles.actionCard}
                         onPress={() => setIsActivityModalVisible(true)}
                     >
-                        <View style={[styles.iconContainer, { backgroundColor: 'rgba(74, 144, 226, 0.1)' }]}>
-                            <Activity color="#4A90E2" size={32} />
+                        <View style={[styles.iconContainer, { backgroundColor: theme.colors.transparent.blue_subtle }]}>
+                            <Activity color={theme.colors.accent.secondary} size={32} />
                         </View>
                         <Text style={styles.actionText}>Log Activity</Text>
                     </TouchableOpacity>
@@ -127,9 +130,9 @@ export default function DashboardScreen({ navigation }: Props) {
                                 }}
                             >
                                 <View style={styles.miniIcon}>
-                                    {item.type === 'note' && <Activity color="#E5D0AC" size={16} />}
-                                    {item.type === 'task' && <Activity color="#4A90E2" size={16} />}
-                                    {item.type === 'expense' && <Activity color="#FF453A" size={16} />}
+                                    {item.type === 'note' && <Activity color={theme.colors.accent.primary} size={16} />}
+                                    {item.type === 'task' && <Activity color={theme.colors.accent.secondary} size={16} />}
+                                    {item.type === 'expense' && <Activity color={theme.colors.accent.error} size={16} />}
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.miniTitle}>{item.title}</Text>
@@ -162,22 +165,22 @@ export default function DashboardScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     content: {
-        padding: 24,
+        padding: theme.spacing.lg,
         paddingTop: 60,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center', // Changed to center for better alignment
-        marginBottom: 24, // Reduced margin
+        alignItems: 'center',
+        marginBottom: theme.spacing.lg,
     },
     greetingContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: theme.spacing.sm + 4, // 12
     },
     animationContainer: {
         width: 60,
@@ -186,77 +189,77 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     greeting: {
-        fontSize: 16,
-        color: '#A1A1AA',
+        fontSize: theme.typography.size.lg,
+        color: theme.colors.text.muted,
     },
     userName: {
-        fontSize: 28,
+        fontSize: theme.typography.size.xxxl,
         fontWeight: 'bold',
-        color: '#E5D0AC',
+        color: theme.colors.text.primary,
     },
     logoutButton: {
-        padding: 8,
-        backgroundColor: '#2C2C2E',
-        borderRadius: 8,
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: theme.spacing.sm,
     },
     logoutText: {
-        color: '#FF453A',
+        color: theme.colors.accent.error,
         fontWeight: '500',
     },
     section: {
-        marginBottom: 32,
+        marginBottom: theme.spacing.xl,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 16,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.md,
     },
     actionGrid: {
         flexDirection: 'row',
-        gap: 16,
+        gap: theme.spacing.md,
     },
     actionCard: {
         flex: 1,
-        backgroundColor: '#2C2C2E',
-        padding: 16,
-        borderRadius: 16,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
+        borderRadius: theme.spacing.md,
         alignItems: 'center',
-        gap: 12,
+        gap: theme.spacing.sm + 4, // 12
     },
     iconContainer: {
         padding: 12,
         borderRadius: 24,
     },
     actionText: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         fontWeight: '500',
     },
     summaryCard: {
-        backgroundColor: '#2C2C2E',
-        padding: 24,
-        borderRadius: 16,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.lg,
+        borderRadius: theme.spacing.md,
     },
     summaryText: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         fontStyle: 'italic',
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: theme.spacing.md,
     },
     seeAllText: {
-        color: '#E5D0AC',
-        fontSize: 14,
+        color: theme.colors.accent.primary,
+        fontSize: theme.typography.size.md,
     },
     activityList: {
-        gap: 8,
+        gap: theme.spacing.sm,
     },
     miniActivityCard: {
         flexDirection: 'row',
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         padding: 12,
         borderRadius: 12,
         alignItems: 'center',
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: theme.colors.transparent.background_subtle,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -280,7 +283,7 @@ const styles = StyleSheet.create({
         fontSize: 10,
     },
     miniAmount: {
-        color: '#FF453A',
+        color: theme.colors.accent.error,
         fontSize: 14,
         fontWeight: 'bold',
     }

@@ -6,6 +6,7 @@ import { LogOut, Key, Globe, Brain, Info, Check, Code, ExternalLink, Zap, Cloud,
 import { useSettingsStore } from '../../store/settingsStore';
 import CustomAlertModal from '../../components/common/CustomAlertModal';
 import { useNavigation } from '@react-navigation/native';
+import { theme } from '../../theme';
 
 export default function SettingsScreen() {
     const navigation = useNavigation<any>();
@@ -166,7 +167,7 @@ export default function SettingsScreen() {
                             <TextInput
                                 style={styles.keyInput}
                                 placeholder={id === 'openrouter' ? "sk-or-..." : "Paste your API Key..."}
-                                placeholderTextColor="#666"
+                                placeholderTextColor={theme.colors.text.muted}
                                 secureTextEntry
                                 value={localKey}
                                 onChangeText={setLocalKey}
@@ -183,7 +184,7 @@ export default function SettingsScreen() {
 
                         <View style={styles.actionButtons}>
                             <TouchableOpacity testID="save-key-btn" style={styles.saveButton} onPress={handleSave}>
-                                <Save size={16} color="#1C1C1E" />
+                                <Save size={16} color={theme.colors.text.inverse} />
                                 <Text style={styles.saveButtonText}>Save Key</Text>
                             </TouchableOpacity>
 
@@ -193,7 +194,7 @@ export default function SettingsScreen() {
                                 onPress={handleTestConnection}
                                 disabled={isTesting}
                             >
-                                {isTesting ? <Loader2 size={16} color="#FFFFFF" /> : <Zap size={16} color="#FFFFFF" />}
+                                {isTesting ? <Loader2 size={16} color={theme.colors.text.secondary} /> : <Zap size={16} color={theme.colors.text.secondary} />}
                                 <Text style={styles.testButtonText}>{isTesting ? "Testing..." : "Test Connection"}</Text>
                             </TouchableOpacity>
                         </View>
@@ -213,7 +214,7 @@ export default function SettingsScreen() {
                                             {selectedModel ? selectedModel.id : "Tap to browse..."}
                                         </Text>
                                     </View>
-                                    <ChevronRight color="#666" size={20} />
+                                    <ChevronRight color={theme.colors.text.muted} size={20} />
                                 </TouchableOpacity>
                             </>
                         )}
@@ -255,21 +256,21 @@ export default function SettingsScreen() {
                         {renderProviderCard(
                             "perplexity",
                             "Perplexity (Sonar)",
-                            <Zap color={provider === 'perplexity' ? '#1C1C1E' : '#E5D0AC'} size={24} />,
+                            <Zap color={provider === 'perplexity' ? theme.colors.text.inverse : theme.colors.accent.primary} size={24} />,
                             "Best for real-time web search and up-to-date info."
                         )}
 
                         {renderProviderCard(
                             "gemini",
                             "Google Gemini",
-                            <Brain color={provider === 'gemini' ? '#1C1C1E' : '#4A90E2'} size={24} />,
+                            <Brain color={provider === 'gemini' ? theme.colors.text.inverse : theme.colors.accent.secondary} size={24} />,
                             "Great for creative writing."
                         )}
 
                         {renderProviderCard(
                             "openrouter",
                             "OpenRouter (BYOK)",
-                            <Cloud color={provider === 'openrouter' ? '#1C1C1E' : '#A855F7'} size={24} />,
+                            <Cloud color={provider === 'openrouter' ? theme.colors.text.inverse : '#A855F7'} size={24} />,
                             "Access any model via your own key."
                         )}
                     </View>
@@ -280,7 +281,7 @@ export default function SettingsScreen() {
                     <Text style={styles.sectionTitle}>About</Text>
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuIconInfo}>
-                            <Info color="#A1A1AA" size={20} />
+                            <Info color={theme.colors.text.muted} size={20} />
                         </View>
                         <Text style={styles.menuText}>Version</Text>
                         <Text style={styles.versionText}>1.0.0 (Beta)</Text>
@@ -288,7 +289,7 @@ export default function SettingsScreen() {
                 </View>
 
                 <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={handleLogout}>
-                    <LogOut color="#FF453A" size={20} />
+                    <LogOut color={theme.colors.accent.error} size={20} />
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
 
@@ -309,109 +310,109 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     content: {
-        padding: 24,
+        padding: theme.spacing.lg,
         paddingTop: 60,
         paddingBottom: 40,
     },
     screenTitle: {
-        fontSize: 32,
+        fontSize: theme.typography.size.display,
         fontWeight: 'bold',
-        color: '#E5D0AC',
-        marginBottom: 32,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.xl,
     },
     section: {
-        marginBottom: 32,
+        marginBottom: theme.spacing.xl,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 8,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.sm,
     },
     sectionSubtitle: {
-        fontSize: 14,
-        color: '#A1A1AA',
-        marginBottom: 16,
+        fontSize: theme.typography.size.md,
+        color: theme.colors.text.muted,
+        marginBottom: theme.spacing.md,
     },
     profileCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#2C2C2E',
-        padding: 16,
-        borderRadius: 16,
-        gap: 16,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
+        borderRadius: theme.spacing.md,
+        gap: theme.spacing.md,
     },
     avatar: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarText: {
-        fontSize: 24,
+        fontSize: theme.typography.size.xxl,
         fontWeight: 'bold',
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     userName: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
     },
     userEmail: {
-        fontSize: 14,
-        color: '#A1A1AA',
+        fontSize: theme.typography.size.md,
+        color: theme.colors.text.muted,
     },
     providerGrid: {
-        gap: 12,
+        gap: theme.spacing.sm + 4,
     },
     providerCard: {
-        backgroundColor: '#2C2C2E',
-        borderRadius: 16,
-        padding: 16,
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: theme.spacing.md,
+        padding: theme.spacing.md,
         borderWidth: 1,
         borderColor: 'transparent',
     },
     providerCardActive: {
-        backgroundColor: '#E5D0AC',
-        borderColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
+        borderColor: theme.colors.accent.primary,
     },
     providerHeader: {
         flexDirection: 'row',
-        gap: 12,
+        gap: theme.spacing.sm + 4,
         alignItems: 'flex-start',
     },
     providerIconContainer: {
-        padding: 8,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 8,
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.transparent.background_subtle,
+        borderRadius: theme.spacing.sm,
     },
     providerName: {
-        fontSize: 16,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         marginBottom: 4,
     },
     textActive: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     providerDesc: {
-        fontSize: 12,
+        fontSize: theme.typography.size.sm,
         color: '#888',
     },
     textActiveDesc: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         opacity: 0.8,
     },
     activeBadge: {
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.text.inverse,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 4,
@@ -420,35 +421,35 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.text.inverse,
     },
     configContainer: {
-        marginTop: 12,
-        paddingTop: 12,
+        marginTop: theme.spacing.sm + 4,
+        paddingTop: theme.spacing.sm + 4,
     },
     divider: {
         height: 1,
         backgroundColor: 'rgba(0,0,0,0.1)',
-        marginBottom: 12,
+        marginBottom: theme.spacing.sm + 4,
     },
     configLabel: {
-        fontSize: 12,
+        fontSize: theme.typography.size.sm,
         fontWeight: 'bold',
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         marginBottom: 4,
     },
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(255,255,255,0.4)',
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        marginBottom: 12,
+        borderRadius: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.sm,
+        marginBottom: theme.spacing.sm + 4,
     },
     keyInput: {
         flex: 1,
         paddingVertical: 8,
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
     },
     modelSelector: {
         flexDirection: 'row',
@@ -456,97 +457,97 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: 'rgba(255,255,255,0.4)',
         padding: 10,
-        borderRadius: 8,
+        borderRadius: theme.spacing.sm,
     },
     selectedModelName: {
         fontWeight: 'bold',
-        color: '#1C1C1E',
-        fontSize: 14,
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.size.md,
     },
     selectedModelId: {
         fontSize: 10,
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         opacity: 0.7,
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#2C2C2E',
-        padding: 16,
-        borderRadius: 12,
-        gap: 12,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
+        borderRadius: theme.spacing.sm + 4,
+        gap: theme.spacing.sm + 4,
     },
     menuIconInfo: {
-        padding: 8,
-        backgroundColor: 'rgba(161, 161, 170, 0.1)',
-        borderRadius: 8,
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.transparent.background_subtle,
+        borderRadius: theme.spacing.sm,
     },
     menuText: {
         flex: 1,
-        fontSize: 16,
-        color: '#FFFFFF',
+        fontSize: theme.typography.size.lg,
+        color: theme.colors.text.secondary,
     },
     versionText: {
-        color: '#666',
-        fontSize: 14,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.md,
     },
     logoutButton: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: 'rgba(255, 69, 58, 0.1)',
-        borderRadius: 12,
-        marginTop: 16,
-        gap: 8,
+        padding: theme.spacing.md,
+        backgroundColor: 'rgba(255, 69, 58, 0.1)', // Keeping this for specific destructive style
+        borderRadius: theme.spacing.sm + 4,
+        marginTop: theme.spacing.md,
+        gap: theme.spacing.sm,
     },
     logoutText: {
-        color: '#FF453A',
-        fontSize: 16,
+        color: theme.colors.accent.error,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
     },
     footerText: {
         textAlign: 'center',
-        color: '#666',
-        marginTop: 32,
-        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginTop: theme.spacing.xl,
+        fontSize: theme.typography.size.sm,
         fontStyle: 'italic',
     },
     actionButtons: {
         flexDirection: 'row',
-        gap: 12,
-        marginBottom: 16,
+        gap: theme.spacing.sm + 4,
+        marginBottom: theme.spacing.md,
     },
     saveButton: {
         flex: 1,
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 10,
-        borderRadius: 8,
+        borderRadius: theme.spacing.sm,
         gap: 6,
     },
     saveButtonText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: theme.typography.size.md,
     },
     testButton: {
         flex: 1,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderWidth: 1,
-        borderColor: '#4A4A4C',
+        borderColor: theme.colors.border.subtle,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 10,
-        borderRadius: 8,
+        borderRadius: theme.spacing.sm,
         gap: 6,
     },
     testButtonText: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         fontWeight: '600',
-        fontSize: 14,
+        fontSize: theme.typography.size.md,
     }
 });

@@ -19,4 +19,16 @@ export class LocalCategorizer {
 
         return 'Uncategorized';
     }
+
+    public static suggestType(text: string): 'note' | 'task' | 'expense' {
+        const lowerText = text.toLowerCase();
+
+        const expenseKeywords = ['buy', 'pay', 'cost', 'spent', 'bill', 'subscription', 'price', '$', 'inr', 'rupees'];
+        const taskKeywords = ['call', 'meet', 'schedule', 'remind', 'deadline', 'todo', 'submit', 'finish', 'complete'];
+
+        if (expenseKeywords.some(w => lowerText.includes(w))) return 'expense';
+        if (taskKeywords.some(w => lowerText.includes(w))) return 'task';
+
+        return 'note';
+    }
 }

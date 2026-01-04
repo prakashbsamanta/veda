@@ -1,21 +1,7 @@
 import { dbService } from './DatabaseService';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/Logger';
-
-export interface ActivityItem {
-    id: string;
-    user_id: string;
-    type: 'note' | 'task' | 'expense';
-    title: string;
-    description?: string;
-    category?: string;
-    created_at: string;
-    // For expenses
-    amount?: number;
-    currency?: string;
-    // Recurrence
-    recurrence_rule?: string; // JSON string: { frequency: 'daily', interval: 1, endDate: '...' }
-}
+import { ActivityItem } from '../../types';
 
 export class ActivityService {
     private static instance: ActivityService;
