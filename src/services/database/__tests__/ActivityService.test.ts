@@ -175,6 +175,33 @@ describe('ActivityService', () => {
             );
         });
 
+        it('should update expense currency only', async () => {
+            await service.updateActivity('1', {
+                type: 'expense',
+                currency: 'GBP'
+            } as any);
+
+            expect(dbService.execute).toHaveBeenCalledWith(
+                expect.stringContaining('UPDATE expenses SET currency = ?'),
+                ['GBP', '1']
+            );
+        });
+    });
+
+    describe('createActivity edge cases', () => {
+        it('should skip expenses table if amount is missing for expense type', async () => {
+            await service.createActivity('user-1', {
+                type: 'expense',
+                title: 'NoAmount'
+            });
+
+            expect(dbService.execute).toHaveBeenCalledTimes(1); // Only activities table
+            expect(dbService.execute).toHaveBeenCalledWith(
+                expect.stringContaining('INSERT INTO activities'),
+                expect.any(Array)
+            );
+        });
+
         it('should handle update error', async () => {
             (dbService.execute as jest.Mock).mockRejectedValueOnce(new Error('Update failed'));
             await expect(service.updateActivity('1', { title: 'F' })).rejects.toThrow('Update failed');

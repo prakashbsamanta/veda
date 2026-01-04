@@ -1,6 +1,8 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from './types';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { BlurView } from 'expo-blur';
+import { StyleSheet, Platform } from 'react-native';
+import { MainTabParamList } from '../types';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import ActivityScreen from '../screens/dashboard/ActivityScreen';
 import ChatScreen from '../screens/dashboard/ChatScreen';
@@ -9,7 +11,7 @@ import DebugScreen from '../screens/DebugScreen'; // Keep DebugScreen for now
 
 import { Home, Activity, MessageCircle, Settings, Terminal } from 'lucide-react-native';
 
-const Tab = createBottomTabNavigator<MainTabParamList & { Debug: undefined }>();
+const Tab = createMaterialTopTabNavigator<MainTabParamList & { Debug: undefined }>();
 
 export const getTabBarIcon = (routeName: string, { color, size }: { color: string; size: number }) => {
     switch (routeName) {
@@ -28,19 +30,22 @@ export const getTabBarIcon = (routeName: string, { color, size }: { color: strin
     }
 };
 
+
+
+// ... imports ...
+
+import AnimatedTabBar from './AnimatedTabBar';
+
+// ...
+
 export default function MainNavigator() {
     return (
         <Tab.Navigator
+            tabBar={(props) => <AnimatedTabBar {...props} />}
+            tabBarPosition="bottom"
             screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarStyle: {
-                    backgroundColor: '#1C1C1E',
-                    borderTopColor: '#2C2C2E',
-                    paddingTop: 8,
-                },
-                tabBarActiveTintColor: '#E5D0AC',
-                tabBarInactiveTintColor: '#666',
-                tabBarIcon: (props) => getTabBarIcon(route.name, props),
+                swipeEnabled: true,
+                tabBarIcon: (props) => getTabBarIcon(route.name, { ...props, size: 24 }),
             })}
         >
             <Tab.Screen name="Dashboard" component={DashboardScreen} />
@@ -50,10 +55,25 @@ export default function MainNavigator() {
             <Tab.Screen
                 name="Debug"
                 component={DebugScreen}
-                options={{
-                    tabBarButton: () => null
-                }}
             />
         </Tab.Navigator>
     );
 }
+
+const styles = StyleSheet.create({
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 10,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.5,
+        elevation: 5,
+        // Overflow hidden is important for borderRadius with BlurView on Android sometimes, 
+        // but BlurView usually handles itself. 
+        // Note: borderRadius on tabBarStyle applies to the container.
+        // The BlurView needs to match the container's overflow or radius.
+        overflow: 'hidden'
+    }
+});

@@ -4,6 +4,7 @@ import { useSettingsStore, OpenRouterModel } from '../../store/settingsStore';
 import { openRouterService, OpenRouterModelDTO } from '../../services/ai/OpenRouterService';
 import { Search, Info, X, Check, Cloud } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { theme } from '../../theme';
 
 export default function ModelBrowserScreen() {
     const navigation = useNavigation();
@@ -86,7 +87,7 @@ export default function ModelBrowserScreen() {
                 <View style={styles.cardHeader}>
                     <Text style={styles.modelName} numberOfLines={1}>{item.name.replace(':free', '')}</Text>
                     {free && <View style={styles.freeBadge}><Text style={styles.freeText}>FREE</Text></View>}
-                    {isSelected && <View style={styles.selectedBadge}><Check size={12} color="#000" /></View>}
+                    {isSelected && <View style={styles.selectedBadge}><Check size={12} color={theme.colors.text.inverse} /></View>}
                 </View>
 
                 <Text style={styles.modelId} numberOfLines={1}>{item.id}</Text>
@@ -109,18 +110,18 @@ export default function ModelBrowserScreen() {
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn} testID="close-browser-btn">
-                    <X color="#FFF" size={24} />
+                    <X color={theme.colors.text.secondary} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Browse Models</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <View style={styles.searchContainer}>
-                <Search color="#666" size={20} />
+                <Search color={theme.colors.text.muted} size={20} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search 'DeepSeek', 'Llama'..."
-                    placeholderTextColor="#666"
+                    placeholderTextColor={theme.colors.text.muted}
                     value={searchQuery}
                     onChangeText={handleSearch}
                 />
@@ -128,7 +129,7 @@ export default function ModelBrowserScreen() {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#E5D0AC" />
+                    <ActivityIndicator size="large" color={theme.colors.accent.primary} />
                     <Text style={styles.loadingText}>Fetching models from OpenRouter...</Text>
                 </View>
             ) : (
@@ -154,7 +155,7 @@ export default function ModelBrowserScreen() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>{detailModel?.name}</Text>
                             <TouchableOpacity onPress={() => setDetailModel(null)} testID="close-modal-btn">
-                                <X color="#A1A1AA" size={24} />
+                                <X color={theme.colors.text.muted} size={24} />
                             </TouchableOpacity>
                         </View>
 
@@ -210,7 +211,7 @@ export default function ModelBrowserScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
     },
     header: {
         flexDirection: 'row',
@@ -219,11 +220,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 60,
         paddingBottom: 20,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
     },
     title: {
-        color: '#E5D0AC',
-        fontSize: 18,
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
     },
     closeBtn: {
@@ -232,17 +233,17 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#2C2C2E',
-        margin: 16,
-        paddingHorizontal: 16,
+        backgroundColor: theme.colors.background.secondary,
+        margin: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
         paddingVertical: 12,
-        borderRadius: 12,
-        gap: 12,
+        borderRadius: theme.spacing.sm + 4,
+        gap: theme.spacing.sm + 4,
     },
     searchInput: {
         flex: 1,
-        color: '#FFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.md,
     },
     center: {
         flex: 1,
@@ -250,23 +251,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     loadingText: {
-        color: '#666',
+        color: theme.colors.text.muted,
         marginTop: 12,
     },
     listContent: {
-        padding: 16,
-        gap: 12,
+        padding: theme.spacing.md,
+        gap: theme.spacing.sm + 4,
     },
     card: {
-        backgroundColor: '#2C2C2E',
-        padding: 16,
-        borderRadius: 12,
+        backgroundColor: theme.colors.background.secondary,
+        padding: theme.spacing.md,
+        borderRadius: theme.spacing.sm + 4,
         borderWidth: 1,
         borderColor: 'transparent',
     },
     selectedCard: {
-        borderColor: '#E5D0AC',
-        backgroundColor: 'rgba(229, 208, 172, 0.1)',
+        borderColor: theme.colors.accent.primary,
+        backgroundColor: theme.colors.transparent.accent_subtle,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -275,29 +276,29 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     modelName: {
-        color: '#FFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
         flex: 1,
     },
     modelId: {
-        color: '#666',
-        fontSize: 12,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.sm,
         marginBottom: 8,
     },
     freeBadge: {
-        backgroundColor: '#34D399',
+        backgroundColor: theme.colors.accent.success,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
     },
     freeText: {
-        color: '#065F46',
+        color: '#065F46', // Keeping this for now as it's specific to the badge contrast, or could use inverse text on success
         fontSize: 10,
         fontWeight: 'bold',
     },
     selectedBadge: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         borderRadius: 10,
         padding: 2,
     },
@@ -306,12 +307,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     infoText: {
-        color: '#A1A1AA',
-        fontSize: 12,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.sm,
     },
     priceText: {
-        color: '#A1A1AA',
-        fontSize: 12,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.sm,
     },
     // Modal Styles
     modalOverlay: {
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: theme.colors.background.primary,
         height: '70%',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
@@ -333,8 +334,8 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#FFF',
-        fontSize: 20,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
         flex: 1,
     },
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     freeBadgeLarge: {
-        backgroundColor: '#34D399',
+        backgroundColor: theme.colors.accent.success,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 8,
@@ -357,40 +358,40 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     ctxBadge: {
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 8,
     },
     ctxText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
     },
     sectionTitle: {
-        color: '#FFF',
-        fontSize: 16,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
         marginBottom: 8,
         marginTop: 16,
     },
     description: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         lineHeight: 22,
         fontSize: 14,
     },
     priceRow: {
         flexDirection: 'row',
         gap: 32,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         padding: 16,
         borderRadius: 12,
     },
     priceLabel: {
-        color: '#666',
+        color: theme.colors.text.muted,
         fontSize: 12,
         marginBottom: 4,
     },
     priceValue: {
-        color: '#FFF',
+        color: theme.colors.text.secondary,
         fontWeight: 'bold',
         fontSize: 16,
     },
@@ -401,14 +402,14 @@ const styles = StyleSheet.create({
         fontFamily: 'Courier',
     },
     selectButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         padding: 18,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 16,
     },
     selectButtonText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
         fontSize: 16,
     }

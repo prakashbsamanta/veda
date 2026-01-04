@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { theme } from '../../theme';
 
 interface CalendarViewProps {
     selectedDate: Date;
@@ -79,13 +80,13 @@ export default function CalendarView({ selectedDate, onDateSelect, minDate }: Ca
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navButton}>
-                    <ChevronLeft color="#E5D0AC" size={24} />
+                    <ChevronLeft color={theme.colors.accent.primary} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.monthTitle}>
                     {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                 </Text>
                 <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navButton}>
-                    <ChevronRight color="#E5D0AC" size={24} />
+                    <ChevronRight color={theme.colors.accent.primary} size={24} />
                 </TouchableOpacity>
             </View>
 
@@ -142,12 +143,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: theme.spacing.lg,
     },
     monthTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.xl,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.primary,
     },
     navButton: {
         padding: 8,
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     dayLabel: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
         fontSize: 14,
         fontWeight: '600',
         width: 40,
@@ -178,25 +179,25 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     selectedDayCell: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
     },
     todayCell: {
         borderWidth: 1,
-        borderColor: '#E5D0AC',
+        borderColor: theme.colors.accent.primary,
     },
     dayText: {
-        color: '#FFFFFF',
+        color: theme.colors.text.primary,
         fontSize: 16,
     },
     selectedDayText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
     },
     todayText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
         fontWeight: 'bold',
     },
     disabledDayText: {
-        color: '#3A3A3C',
+        color: theme.colors.text.disabled,
     }
 });

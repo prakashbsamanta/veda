@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
 
@@ -12,12 +13,11 @@ interface Props {
     title: string;
     message?: string;
     buttons?: AlertButton[];
-    onClose?: () => void; // Optional fallback if no buttons provided or background tap
+    onClose?: () => void;
 }
 
 export default function CustomAlertModal({ visible, title, message, buttons = [], onClose }: Props) {
-    // If no buttons are provided, show a default "OK" button
-    const actionButtons = buttons.length > 0 ? buttons : [{ text: 'OK', style: 'default', onPress: onClose }];
+    const actionButtons: AlertButton[] = buttons.length > 0 ? buttons : [{ text: 'OK', style: 'default', onPress: onClose }];
 
     return (
         <Modal
@@ -28,6 +28,7 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
         >
             <View style={styles.overlay}>
                 <View style={styles.alertContainer}>
+                    <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
                     <Text style={styles.title}>{title}</Text>
                     {message ? <Text style={styles.message}>{message}</Text> : null}
 
@@ -37,7 +38,6 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
                                 key={index}
                                 style={[
                                     styles.button,
-                                    // Add margin for multiple buttons if needed, or flex
                                 ]}
                                 onPress={() => {
                                     if (btn.onPress) btn.onPress();
@@ -60,54 +60,56 @@ export default function CustomAlertModal({ visible, title, message, buttons = []
     );
 }
 
+import { theme } from '../../theme';
+
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 24,
+        padding: theme.spacing.lg,
     },
     alertContainer: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: 'rgba(28, 28, 30, 0.75)', // Glassy background
+        borderRadius: theme.spacing.md,
+        padding: theme.spacing.lg,
         width: '100%',
         maxWidth: 340,
-        elevation: 5,
         borderWidth: 1,
-        borderColor: '#2C2C2E',
+        borderColor: theme.colors.border.subtle,
+        overflow: 'hidden',
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 8,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.sm,
     },
     message: {
-        fontSize: 16,
-        color: '#A1A1AA',
-        marginBottom: 24,
+        fontSize: theme.typography.size.lg,
+        color: theme.colors.text.muted,
+        marginBottom: theme.spacing.lg,
         lineHeight: 22,
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: 16,
+        gap: theme.spacing.md,
     },
     button: {
-        paddingVertical: 8,
+        paddingVertical: theme.spacing.sm,
         paddingHorizontal: 12,
     },
     buttonText: {
-        color: '#E5D0AC',
-        fontSize: 16,
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
     },
     cancelText: {
-        color: '#A1A1AA',
+        color: theme.colors.text.muted,
     },
     destructiveText: {
-        color: '#FF453A',
+        color: theme.colors.accent.error,
     },
 });

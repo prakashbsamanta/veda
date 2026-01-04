@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { LLMConfig, DEFAULT_LLM_CONFIG } from '../config/llmConfig';
+import { DEFAULT_LLM_CONFIG } from '../config/llmConfig';
+import { LLMConfig } from '../types';
+
 import { cloudAIService } from '../services/ai/CloudAIService';
 
 interface LLMState {

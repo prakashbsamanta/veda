@@ -1,20 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Check, ChevronRight, ChevronLeft } from 'lucide-react-native';
-
-export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
-
-export interface RecurrenceRule {
-    frequency: RecurrenceType;
-    interval?: number;
-}
+import { RecurrenceFrequency, RecurrenceRule } from '../../types';
+import { theme } from '../../theme';
 
 interface RecurrenceOptionsProps {
     selectedRule?: RecurrenceRule;
     onSelect: (rule: RecurrenceRule) => void;
 }
 
-const OPTIONS: { id: RecurrenceType; label: string }[] = [
+const OPTIONS: { id: RecurrenceFrequency; label: string }[] = [
     { id: 'none', label: 'Does not repeat' },
     { id: 'daily', label: 'Every Day' },
     { id: 'weekly', label: 'Every Week' },
@@ -29,7 +24,7 @@ export default function RecurrenceOptions({ selectedRule, onSelect }: Recurrence
     const [customInterval, setCustomInterval] = useState('1');
     const [customFrequency, setCustomFrequency] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
 
-    const handleSelectOption = (type: RecurrenceType) => {
+    const handleSelectOption = (type: RecurrenceFrequency) => {
         if (type === 'custom') {
             setShowCustomView(true);
         } else {
@@ -50,7 +45,7 @@ export default function RecurrenceOptions({ selectedRule, onSelect }: Recurrence
             <View style={styles.container}>
                 <View style={styles.customHeader}>
                     <TouchableOpacity onPress={() => setShowCustomView(false)} style={styles.backButton}>
-                        <ChevronLeft color="#E5D0AC" size={24} />
+                        <ChevronLeft color={theme.colors.accent.primary} size={24} />
                         <Text style={styles.backText}>Back</Text>
                     </TouchableOpacity>
                     <Text style={styles.customTitle}>Custom</Text>
@@ -99,12 +94,12 @@ export default function RecurrenceOptions({ selectedRule, onSelect }: Recurrence
                         onPress={() => handleSelectOption(opt.id)}
                     >
                         <View style={styles.optionLeft}>
-                            {selectedType === opt.id && <Check color="#E5D0AC" size={20} />}
+                            {selectedType === opt.id && <Check color={theme.colors.accent.primary} size={20} />}
                             <Text style={[styles.optionLabel, selectedType === opt.id && styles.optionLabelActive]}>
                                 {opt.label}
                             </Text>
                         </View>
-                        {opt.id === 'custom' && <ChevronRight color="#666" size={20} />}
+                        {opt.id === 'custom' && <ChevronRight color={theme.colors.text.muted} size={20} />}
                     </TouchableOpacity>
                 ))}
             </View>
@@ -121,7 +116,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     optionsList: {
-        gap: 8,
+        gap: theme.spacing.sm,
         paddingBottom: 20,
     },
     optionItem: {
@@ -130,7 +125,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 14,
         paddingHorizontal: 12,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: 12,
     },
     optionLeft: {
@@ -139,11 +134,11 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     optionLabel: {
-        color: '#AAAAAA',
-        fontSize: 16,
+        color: theme.colors.text.muted,
+        fontSize: theme.typography.size.md,
     },
     optionLabelActive: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         fontWeight: 'bold',
     },
     // Custom View Styles
@@ -151,34 +146,34 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginBottom: theme.spacing.xl,
     },
     backButton: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     backText: {
-        color: '#E5D0AC',
+        color: theme.colors.accent.primary,
         fontSize: 16,
     },
     customTitle: {
-        fontSize: 18,
+        fontSize: theme.typography.size.lg,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
     },
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        marginBottom: 24,
+        marginBottom: theme.spacing.xl,
     },
     label: {
-        color: '#FFFFFF',
+        color: theme.colors.text.secondary,
         fontSize: 16,
     },
     intervalInput: {
-        backgroundColor: '#2C2C2E',
-        color: '#FFFFFF',
+        backgroundColor: theme.colors.background.secondary,
+        color: theme.colors.text.secondary,
         fontSize: 18,
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -196,30 +191,30 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#2C2C2E',
+        backgroundColor: theme.colors.background.secondary,
         borderWidth: 1,
-        borderColor: '#3A3A3C',
+        borderColor: theme.colors.background.tertiary,
     },
     freqChipActive: {
-        backgroundColor: '#E5D0AC',
-        borderColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
+        borderColor: theme.colors.accent.primary,
     },
     freqText: {
-        color: '#AAAAAA',
+        color: theme.colors.text.muted,
     },
     freqTextActive: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
     },
     confirmButton: {
-        backgroundColor: '#E5D0AC',
+        backgroundColor: theme.colors.accent.primary,
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 12,
         alignItems: 'center',
     },
     confirmText: {
-        color: '#1C1C1E',
+        color: theme.colors.text.inverse,
         fontWeight: 'bold',
         fontSize: 16,
     }
