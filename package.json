@@ -59,7 +59,7 @@
     "babel-plugin-dotenv-import": "^3.0.1",
     "@types/react": "~19.1.0",
     "@types/react-native": "^0.72.8",
-    "@types/uuid": "^10.0.0",
+    "@types/uuid": "^11.0.0",
     "babel-preset-expo": "^54.0.9",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
