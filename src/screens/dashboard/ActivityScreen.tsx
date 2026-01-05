@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { Trash2, FileText, CheckSquare, DollarSign, Plus } from 'lucide-react-native';
+import { Trash2, FileText, CheckSquare, DollarSign, Plus, Paperclip } from 'lucide-react-native';
 import { useAuthStore } from '../../store/authStore';
 import { activityService } from '../../services/database/ActivityService';
 import { ActivityItem } from '../../types';
@@ -57,9 +57,17 @@ export default function ActivityScreen() {
             <View style={styles.activityContent}>
                 <Text style={styles.activityTitle}>{item.title}</Text>
                 {item.description ? <Text style={styles.activityDesc} numberOfLines={1}>{item.description}</Text> : null}
-                <Text style={styles.activityDate}>
-                    {new Date(item.created_at).toLocaleDateString()} • {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Text style={[styles.activityDate, { marginTop: 0, marginRight: 8 }]}>
+                        {new Date(item.created_at).toLocaleDateString()} • {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                    {item.attachment_count && item.attachment_count > 0 ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.background.tertiary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                            <Paperclip size={10} color={theme.colors.text.secondary} />
+                            <Text style={{ fontSize: 10, color: theme.colors.text.secondary, marginLeft: 2 }}>{item.attachment_count}</Text>
+                        </View>
+                    ) : null}
+                </View>
             </View>
             {item.type === 'expense' && (
                 <Text style={styles.activityAmount}>-{item.currency} {item.amount}</Text>
