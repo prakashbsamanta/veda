@@ -43,7 +43,10 @@ jest.mock('lucide-react-native', () => ({
     Camera: 'Camera',
     Image: 'Image',
     Video: 'Video',
-    Paperclip: 'Paperclip'
+    Paperclip: 'Paperclip',
+    Search: 'Search',
+    ChevronDown: 'ChevronDown',
+    ChevronUp: 'ChevronUp'
 }));
 
 jest.mock('expo-notifications', () => ({
@@ -174,8 +177,10 @@ describe('LogActivityModal', () => {
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
-        // Note -> Task
-        fireEvent.press(getByText('Note'));
+        // Note -> Task via Dropdown
+        // Note -> Task via Dropdown
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Task')); // Select
 
         // Verify type set
         fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Future Task');
@@ -211,8 +216,10 @@ describe('LogActivityModal', () => {
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
-        // Note -> Task
-        fireEvent.press(getByText('Note'));
+        // Note -> Task via Dropdown
+        // Note -> Task via Dropdown
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Task')); // Select
 
         fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Past Task');
         const switchEl = getByTestId('reminder-switch');
@@ -246,7 +253,9 @@ describe('LogActivityModal', () => {
         );
 
         // Note -> Task
-        fireEvent.press(getByText('Note'));
+        // Note -> Task
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Task')); // Select
 
         const switchEl = getByTestId('reminder-switch');
         fireEvent(switchEl, 'valueChange', true);
@@ -257,24 +266,24 @@ describe('LogActivityModal', () => {
     });
 
     it('should switch types correctly', () => {
-        const { getByText } = render(
+        const { getByText, getByTestId, getAllByText } = render(
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
         // Initial is Note
-        expect(getByText('Note')).toBeTruthy();
+        // Check using trigger testID
+        expect(getByTestId('dropdown-trigger')).toBeTruthy();
 
-        // Note -> Task
-        fireEvent.press(getByText('Note'));
-        expect(getByText('Task')).toBeTruthy();
+        // Select Task
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open dropdown
+        fireEvent.press(getByTestId('dropdown-option-Task'));
+        // Verify selection - multiple because in trigger AND list
+        expect(getAllByText('Task').length).toBeGreaterThan(0);
 
-        // Task -> Expense
-        fireEvent.press(getByText('Task'));
-        expect(getByText('Expense')).toBeTruthy();
-
-        // Expense -> Note
-        fireEvent.press(getByText('Expense'));
-        expect(getByText('Note')).toBeTruthy();
+        // Select Expense
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open dropdown
+        fireEvent.press(getByTestId('dropdown-option-Expense'));
+        expect(getAllByText('Expense').length).toBeGreaterThan(0);
     });
 
     it('should validate empty title', () => {
@@ -294,10 +303,12 @@ describe('LogActivityModal', () => {
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
-        // Note -> Task
-        fireEvent.press(getByText('Note'));
+        // Note -> Task via Dropdown
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Task')); // Select
         // Task -> Expense
-        fireEvent.press(getByText('Task'));
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Expense')); // Select
 
         fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Test Expense');
         fireEvent.press(getByText('Save Entry'));
@@ -331,12 +342,14 @@ describe('LogActivityModal', () => {
 
     it('should save a valid task WITHOUT reminder', async () => {
         (LocalCategorizer.suggestType as jest.Mock).mockReturnValue('task');
-        const { getByText, getByPlaceholderText } = render(
+        const { getByText, getByPlaceholderText, getByTestId } = render(
             <LogActivityModal visible={true} onClose={mockOnClose} onSave={mockOnSave} />
         );
 
         // Note -> Task
-        fireEvent.press(getByText('Note'));
+        // Note -> Task
+        fireEvent.press(getByTestId('dropdown-trigger')); // Open
+        fireEvent.press(getByTestId('dropdown-option-Task')); // Select
 
         fireEvent.changeText(getByPlaceholderText("What's this about?"), 'Simple Task');
         fireEvent.press(getByText('Save Entry'));

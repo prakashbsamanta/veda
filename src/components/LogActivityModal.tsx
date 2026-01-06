@@ -21,6 +21,7 @@ import { attachmentService } from '../services/database/AttachmentService';
 import { Attachment } from '../types';
 import { Image } from 'react-native';
 import { Video } from 'lucide-react-native';
+import AnimatedDropdown from './common/AnimatedDropdown';
 
 type ActivityType = 'note' | 'task' | 'expense';
 
@@ -299,30 +300,15 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Auto-detected Type Indicator */}
                         <View style={styles.typeIndicatorContainer}>
-                            <Text style={styles.typeLabel}>Categorized as:</Text>
-                            <TouchableOpacity
-                                style={[styles.typeBadge, {
-                                    backgroundColor: type === 'expense' ? 'rgba(255, 69, 58, 0.2)' :
-                                        type === 'task' ? theme.colors.transparent.blue_subtle : theme.colors.transparent.accent_subtle,
-                                    borderColor: type === 'expense' ? theme.colors.accent.error :
-                                        type === 'task' ? theme.colors.accent.secondary : theme.colors.accent.primary
-                                }]}
-                                onPress={() => {
-                                    // Cycle types on click or show alert? Cycling is easy.
-                                    const next = type === 'note' ? 'task' : type === 'task' ? 'expense' : 'note';
-                                    setType(next);
-                                }}
-                            >
-                                {type === 'note' && <FileText size={14} color={theme.colors.accent.primary} />}
-                                {type === 'task' && <CheckSquare size={14} color={theme.colors.accent.secondary} />}
-                                {type === 'expense' && <DollarSign size={14} color={theme.colors.accent.error} />}
-                                <Text style={[styles.typeBadgeText, {
-                                    color: type === 'expense' ? theme.colors.accent.error :
-                                        type === 'task' ? theme.colors.accent.secondary : theme.colors.accent.primary
-                                }]}>
-                                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                                </Text>
-                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <AnimatedDropdown
+                                    label="Categorized as:"
+                                    options={['Note', 'Task', 'Expense']}
+                                    selected={type.charAt(0).toUpperCase() + type.slice(1)}
+                                    onSelect={(val) => setType(val.toLowerCase() as ActivityType)}
+                                    placeholder="Search categories..."
+                                />
+                            </View>
                         </View>
 
                         {/* Form Fields */}
