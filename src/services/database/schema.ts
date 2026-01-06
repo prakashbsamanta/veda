@@ -104,7 +104,7 @@ export const SCHEMA_QUERIES = [
   `CREATE TABLE IF NOT EXISTS attachments (
     id TEXT PRIMARY KEY,
     activity_id TEXT NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('image', 'pdf', 'document')),
+    type TEXT NOT NULL CHECK (type IN ('image', 'pdf', 'document', 'video')),
     local_path TEXT NOT NULL,
     file_name TEXT NOT NULL,
     file_size INTEGER,

@@ -80,7 +80,8 @@ export class ActivityService {
         const query = `
             SELECT 
                 a.id, a.user_id, a.type, a.title, a.description, a.category, a.created_at, a.recurrence_rule,
-                e.amount, e.currency
+                e.amount, e.currency,
+                (SELECT COUNT(*) FROM attachments WHERE activity_id = a.id) as attachment_count
             FROM activities a
             LEFT JOIN expenses e ON a.id = e.activity_id
             WHERE a.user_id = ? AND a.is_deleted = 0

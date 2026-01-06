@@ -21,4 +21,18 @@ export interface ActivityItem {
     currency?: string;
     // Recurrence
     recurrence_rule?: string; // JSON string of RecurrenceRule
+    attachment_count?: number;
+}
+
+export type AttachmentType = 'image' | 'video' | 'pdf' | 'document';
+
+export interface Attachment {
+    id: string;
+    activity_id: string;
+    type: AttachmentType;
+    local_path: string;
+    file_name: string;
+    file_size?: number;
+    mime_type?: string;
+    uploaded_at: string;
 }

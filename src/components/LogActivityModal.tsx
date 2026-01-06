@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch } from 'react-native';
-import { X, Check, FileText, CheckSquare, DollarSign, Plus, AlarmClock, Trash } from 'lucide-react-native';
+import { X, Check, FileText, CheckSquare, DollarSign, Plus, AlarmClock, Trash, Camera, Image as ImageIcon } from 'lucide-react-native';
 import { ActivityService, activityService } from '../services/database/ActivityService';
 import { ActivityItem } from '../types';
 
@@ -15,6 +15,12 @@ import { RecurrenceRule } from '../types';
 
 import { Repeat } from 'lucide-react-native';
 import { theme } from '../theme';
+import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { attachmentService } from '../services/database/AttachmentService';
+import { Attachment } from '../types';
+import { Image } from 'react-native';
+import { Video } from 'lucide-react-native';
 
 type ActivityType = 'note' | 'task' | 'expense';
 
@@ -44,6 +50,10 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
     const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | undefined>(undefined);
     const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
+    // Attachments State
+    const [attachments, setAttachments] = useState<{ uri: string; type: 'image' | 'video'; id?: string }[]>([]);
+    const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
+
     // Custom Alert State
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -68,11 +78,8 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                 setTitle(initialActivity.title);
                 setDescription(initialActivity.description || '');
                 setAmount(initialActivity.amount ? initialActivity.amount.toString() : '');
-                // Reset reminder state for existing tasks as we don't store reminder specific data in ActivityItem yet
-                // For a real app, we'd fetch reminder status
-                setHasReminder(false); // For now, reset reminders on edit
+                setHasReminder(false);
 
-                // Parse recurrence if exists
                 if (initialActivity.recurrence_rule) {
                     try {
                         setRecurrenceRule(JSON.parse(initialActivity.recurrence_rule));
@@ -82,11 +89,18 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                 } else {
                     setRecurrenceRule(undefined);
                 }
+
+                loadAttachments(initialActivity.id);
             } else {
                 resetForm();
             }
         }
     }, [visible, initialActivity]);
+
+    const loadAttachments = async (activityId: string) => {
+        const loaded = await attachmentService.getAttachmentsForActivity(activityId);
+        setExistingAttachments(loaded);
+    };
 
     const resetForm = () => {
         setTitle('');
@@ -97,6 +111,79 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
         setReminderDate(new Date());
         setDatePickerVisible(false);
         setRecurrenceRule(undefined);
+        setAttachments([]);
+        setExistingAttachments([]);
+    };
+
+    const handleLaunchGallery = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsEditing: false,
+                quality: 1,
+                videoMaxDuration: 60,
+            });
+            await processPickerResult(result);
+        } catch (error) {
+            showAlert("Error", "Failed to add media");
+        }
+    };
+
+    const handleLaunchCamera = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (permissionResult.granted === false) {
+                showAlert("Permission Required", "Camera access is needed to take photos.");
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images, // Video from camera needs more handling, start with images
+                allowsEditing: false,
+                quality: 1,
+            });
+            await processPickerResult(result);
+        } catch (error) {
+            showAlert("Error", "Failed to take photo");
+        }
+    };
+
+    const processPickerResult = async (result: ImagePicker.ImagePickerResult) => {
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            let uri = asset.uri;
+
+            if (asset.type === 'image') {
+                const manipResult = await manipulateAsync(
+                    asset.uri,
+                    [{ resize: { width: 1080 } }],
+                    { compress: 0.7, format: SaveFormat.JPEG }
+                );
+                uri = manipResult.uri;
+            }
+
+            setAttachments(prev => [...prev, { uri, type: asset.type === 'video' ? 'video' : 'image' }]);
+        }
+    };
+
+    const handleDeleteExistingAttachment = (attachmentId: string) => {
+        showAlert('Delete Attachment', 'Are you sure you want to delete this attachment?', [
+            { text: 'Cancel', style: 'cancel', onPress: () => hideAlert() },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await attachmentService.deleteAttachment(attachmentId);
+                        setExistingAttachments(prev => prev.filter(a => a.id !== attachmentId));
+                        hideAlert();
+                    } catch (error) {
+                        hideAlert();
+                        showAlert('Error', 'Failed to delete attachment');
+                    }
+                }
+            }
+        ]);
     };
 
     const handleSave = async () => {
@@ -259,17 +346,7 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                 />
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Description</Text>
-                                <TextInput
-                                    style={[styles.input, styles.textArea]}
-                                    placeholder="Add details (categories, tags, etc.)"
-                                    placeholderTextColor={theme.colors.text.muted}
-                                    multiline
-                                    value={description}
-                                    onChangeText={setDescription}
-                                />
-                            </View>
+
 
                             {/* Unified Options Section */}
                             <Text style={styles.sectionLabel}>Details</Text>
@@ -349,6 +426,89 @@ export default function LogActivityModal({ visible, onClose, onSave, initialActi
                                         </TouchableOpacity>
                                     </View>
                                 )}
+                            </View>
+
+                            {/* Description Input & Attachments Row */}
+                            <View>
+                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                    <TextInput
+                                        style={[styles.input, styles.textArea, { color: theme.colors.text.primary, borderColor: theme.colors.border.subtle, flex: 1 }]}
+                                        placeholder="Description (optional)"
+                                        placeholderTextColor={theme.colors.text.secondary}
+                                        value={description}
+                                        onChangeText={setDescription}
+                                        multiline
+                                        numberOfLines={4}
+                                    />
+                                    <View style={{ gap: 12, paddingTop: 4 }}>
+                                        <TouchableOpacity
+                                            testID="camera-button"
+                                            onPress={handleLaunchCamera}
+                                            style={{
+                                                width: 40, height: 40,
+                                                borderRadius: 20,
+                                                backgroundColor: theme.colors.background.secondary,
+                                                justifyContent: 'center', alignItems: 'center',
+                                                borderWidth: 1, borderColor: theme.colors.border.subtle
+                                            }}
+                                        >
+                                            <Camera color={theme.colors.accent.primary} size={20} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            testID="gallery-button"
+                                            onPress={handleLaunchGallery}
+                                            style={{
+                                                width: 40, height: 40,
+                                                borderRadius: 20,
+                                                backgroundColor: theme.colors.background.secondary,
+                                                justifyContent: 'center', alignItems: 'center',
+                                                borderWidth: 1, borderColor: theme.colors.border.subtle
+                                            }}
+                                        >
+                                            <ImageIcon color={theme.colors.accent.primary} size={20} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                {/* Attachments List */}
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row', marginTop: 10 }}>
+                                    {/* Existing Attachments */}
+                                    {existingAttachments.map((att) => (
+                                        <View key={att.id} style={styles.attachmentPreview}>
+                                            {att.type === 'image' ? (
+                                                <Image source={{ uri: att.local_path }} style={styles.previewImage} />
+                                            ) : (
+                                                <View style={[styles.previewImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+                                                    <Video color="#FFF" size={24} />
+                                                </View>
+                                            )}
+                                            <TouchableOpacity
+                                                style={styles.removeAttachment}
+                                                onPress={() => handleDeleteExistingAttachment(att.id)}
+                                            >
+                                                <X size={12} color="#FFF" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    ))}
+                                    {/* New Attachments */}
+                                    {attachments.map((att, index) => (
+                                        <View key={index} style={styles.attachmentPreview}>
+                                            {att.type === 'image' ? (
+                                                <Image source={{ uri: att.uri }} style={styles.previewImage} />
+                                            ) : (
+                                                <View style={[styles.previewImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+                                                    <Video color="#FFF" size={24} />
+                                                </View>
+                                            )}
+                                            <TouchableOpacity
+                                                style={styles.removeAttachment}
+                                                onPress={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                                            >
+                                                <X size={12} color="#FFF" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    ))}
+                                </ScrollView>
                             </View>
 
 
@@ -576,5 +736,30 @@ const styles = StyleSheet.create({
         color: theme.colors.accent.primary,
         fontWeight: '500',
         fontSize: theme.typography.size.lg
+    },
+    attachmentPreview: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        marginRight: 10,
+        overflow: 'hidden',
+        position: 'relative',
+        backgroundColor: theme.colors.background.tertiary
+    },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover'
+    },
+    removeAttachment: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center'
     }
 });
